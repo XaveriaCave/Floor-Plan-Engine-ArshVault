@@ -14,7 +14,7 @@ export function createItemMesh(
   const group = new THREE.Group();
   group.name = `entity-${entity.id}`;
 
-  const primaryColor = new THREE.Color(itemDef.color);
+  const primaryColor = new THREE.Color(entity.customColor || itemDef.color);
   const secondaryColor = itemDef.secondaryColor
     ? new THREE.Color(itemDef.secondaryColor)
     : primaryColor.clone().multiplyScalar(0.7);

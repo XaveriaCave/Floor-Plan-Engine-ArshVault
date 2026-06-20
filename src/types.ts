@@ -6,6 +6,7 @@ export interface GridEntity {
   floorLevel: number;  // Vertical index (0 = ground, 1 = first floor)
   rotation: number;    // In radians (0, Math.PI/2, Math.PI, 1.5 * Math.PI)
   storeys?: number;    // Customizable storey count (e.g., 0 to 90)
+  customColor?: string; // User-selected color override
 }
 
 export type SandboxMode = 'floor';

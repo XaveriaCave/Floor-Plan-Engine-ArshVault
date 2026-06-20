@@ -28,6 +28,7 @@ interface ItemSidebarProps {
   onClearSelection: () => void;
   onRemoveEntity: (id: string) => void;
   onUpdateEntityStoreys?: (id: string, storeys: number) => void;
+  onUpdateEntityColor?: (id: string, color: string) => void;
   placingStoreys?: number;
   onSetPlacingStoreys?: (storeys: number) => void;
 }
@@ -45,6 +46,7 @@ export const ItemSidebar: React.FC<ItemSidebarProps> = ({
   onClearSelection,
   onRemoveEntity,
   onUpdateEntityStoreys,
+  onUpdateEntityColor,
   placingStoreys = 10,
   onSetPlacingStoreys,
 }) => {
@@ -296,7 +298,7 @@ export const ItemSidebar: React.FC<ItemSidebarProps> = ({
                 <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-850/60 flex items-center gap-3">
                   <div
                     className="w-12 h-12 rounded-lg shrink-0 flex items-center justify-center border border-white/10"
-                    style={{ backgroundColor: selectedEntityDef?.color || '#334155' }}
+                    style={{ backgroundColor: selectedEntity.customColor || selectedEntityDef?.color || '#334155' }}
                   >
                     <div className="w-5 h-5 bg-white/20 rounded rotate-12" />
                   </div>
@@ -349,6 +351,24 @@ export const ItemSidebar: React.FC<ItemSidebarProps> = ({
                     <span className="font-bold text-yellow-400">
                       {getRotationDegrees(selectedEntity.rotation)}
                     </span>
+                  </div>
+                </div>
+
+                {/* Color Override Input */}
+                <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-850 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-mono font-medium text-slate-300 uppercase tracking-wide">
+                      CUSTOM COMPONENT COLOR
+                    </span>
+                    <label className="relative cursor-pointer">
+                      <div className="w-6 h-6 rounded border border-slate-600 shadow-sm" style={{ backgroundColor: selectedEntity.customColor || selectedEntityDef?.color || '#ffffff' }} />
+                      <input
+                        type="color"
+                        value={selectedEntity.customColor || selectedEntityDef?.color || '#ffffff'}
+                        onChange={(e) => onUpdateEntityColor?.(selectedEntity.id, e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </label>
                   </div>
                 </div>
 

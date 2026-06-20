@@ -169,7 +169,7 @@ export const TwoDControlCanvas: React.FC<TwoDControlCanvasProps> = ({
 
       if (isCurrentFloor) {
         // Main block paint
-        ctx.fillStyle = itemDef.color;
+        ctx.fillStyle = entity.customColor || itemDef.color;
         ctx.fillRect(-w / 2 + 1, -l / 2 + 1, w - 2, l - 2);
 
         // Highlight inner core

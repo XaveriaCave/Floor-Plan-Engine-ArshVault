@@ -250,5 +250,417 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     gridLength: 2,
     height: 0.9,
     description: 'Sturdy padded frame with memory foam mattress and soft pillows.'
+  },
+  
+  // LIVING & DINING AREA
+  {
+    id: 'furniture-sofa-set',
+    name: 'Classic Sofa Set',
+    category: 'Furniture',
+    color: '#8d6e63',
+    gridWidth: 3,
+    gridLength: 2,
+    height: 0.8,
+    description: 'A complete living room sofa set for family seating.'
+  },
+  {
+    id: 'furniture-coffee-table-rec',
+    name: 'Rectangular Coffee Table',
+    category: 'Furniture',
+    color: '#a1887f',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.45,
+    description: 'A long coffee table for the center of the living area.'
+  },
+  {
+    id: 'furniture-tv-console',
+    name: 'Modern TV Console',
+    category: 'Furniture',
+    color: '#424242',
+    gridWidth: 3,
+    gridLength: 1,
+    height: 0.6,
+    description: 'Low-profile media console unit.'
+  },
+  {
+    id: 'furniture-accent-chair',
+    name: 'Accent Chair',
+    category: 'Furniture',
+    color: '#ffb74d',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.85,
+    description: 'A stylish corner or reading chair.'
+  },
+  {
+    id: 'furniture-dining-table-large',
+    name: 'Large Dining Table',
+    category: 'Furniture',
+    color: '#5d4037',
+    gridWidth: 3,
+    gridLength: 2,
+    height: 0.8,
+    description: 'Spacious dining table for six.'
+  },
+  {
+    id: 'furniture-dining-chairs',
+    name: 'Dining Chairs Set',
+    category: 'Furniture',
+    color: '#cfd8dc',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Standard wooden dining chair.'
+  },
+  {
+    id: 'furniture-sideboard',
+    name: 'Dining Sideboard',
+    category: 'Furniture',
+    color: '#795548',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Storage cabinet for dining ware.'
+  },
+  {
+    id: 'furniture-bookshelf-wide',
+    name: 'Wide Bookshelf',
+    category: 'Furniture',
+    color: '#8d6e63',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 2.0,
+    description: 'Broad shelving unit for a home library.'
+  },
+
+  // BEDROOM
+  {
+    id: 'furniture-bed-frame',
+    name: 'Basic Bed Frame',
+    category: 'Furniture',
+    color: '#bcaaa4',
+    gridWidth: 2,
+    gridLength: 2,
+    height: 0.6,
+    description: 'Simple wooden bed frame.'
+  },
+  {
+    id: 'furniture-nightstand',
+    name: 'Nightstand',
+    category: 'Furniture',
+    color: '#8d6e63',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.5,
+    description: 'Small bedside table with drawers.'
+  },
+  {
+    id: 'furniture-wardrobe',
+    name: 'Tall Wardrobe',
+    category: 'Furniture',
+    color: '#5d4037',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 2.2,
+    description: 'Standing closet for hanging clothes.'
+  },
+  {
+    id: 'furniture-dresser',
+    name: 'Bedroom Dresser',
+    category: 'Furniture',
+    color: '#a1887f',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Horizontal chest of drawers.'
+  },
+  {
+    id: 'furniture-vanity-table',
+    name: 'Vanity Table',
+    category: 'Furniture',
+    color: '#eceff1',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 1.5,
+    description: 'Makeup table with an attached mirror.'
+  },
+  {
+    id: 'furniture-bench',
+    name: 'End-of-bed Bench',
+    category: 'Furniture',
+    color: '#9e9e9e',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.45,
+    description: 'Upholstered seating bench.'
+  },
+
+  // KITCHEN
+  {
+    id: 'fixture-kitchen-counter',
+    name: 'Standard Kitchen Counter',
+    category: 'Fixtures',
+    color: '#e0e0e0',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Basic kitchen countertop with cabinets underneath.'
+  },
+  {
+    id: 'fixture-kitchen-sink',
+    name: 'Double Kitchen Sink',
+    category: 'Fixtures',
+    color: '#b0bec5',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Stainless steel double basin sink.'
+  },
+  {
+    id: 'fixture-fridge-basic',
+    name: 'Standard Refrigerator',
+    category: 'Fixtures',
+    color: '#ffffff',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.8,
+    description: 'Standard white cooling appliance.'
+  },
+  {
+    id: 'fixture-cooking-range',
+    name: 'Cooking Range / Oven',
+    category: 'Fixtures',
+    color: '#37474f',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Stove and oven combination unit.'
+  },
+  {
+    id: 'fixture-dishwasher',
+    name: 'Dishwasher Unit',
+    category: 'Fixtures',
+    color: '#cfd8dc',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Under-counter automatic dishwasher.'
+  },
+  {
+    id: 'fixture-kitchen-island',
+    name: 'Kitchen Island',
+    category: 'Fixtures',
+    color: '#ffcc80',
+    gridWidth: 3,
+    gridLength: 1,
+    height: 0.9,
+    description: 'Freestanding kitchen prep island.'
+  },
+  {
+    id: 'furniture-pantry-cabinet',
+    name: 'Pantry Cabinet',
+    category: 'Furniture',
+    color: '#fff59d',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.1,
+    description: 'Tall cabinet for dry food storage.'
+  },
+  {
+    id: 'furniture-bar-stool',
+    name: 'Bar Stool',
+    category: 'Furniture',
+    color: '#212121',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.1,
+    description: 'High stool for kitchen islands or bars.'
+  },
+
+  // BATHROOM
+  {
+    id: 'fixture-wash-basin',
+    name: 'Bathroom Wash Basin',
+    category: 'Fixtures',
+    color: '#ffffff',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.85,
+    description: 'Ceramic hand wash sink.'
+  },
+  {
+    id: 'fixture-toilet-bowl',
+    name: 'Standard Toilet Bowl',
+    category: 'Fixtures',
+    color: '#ffffff',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.8,
+    description: 'Standard white toilet.'
+  },
+  {
+    id: 'fixture-shower-enclosure',
+    name: 'Glass Shower Enclosure',
+    category: 'Fixtures',
+    color: '#e0f7fa',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.2,
+    description: 'Standing shower unit with glass doors.'
+  },
+  {
+    id: 'fixture-bathtub-basic',
+    name: 'Standard Bathtub',
+    category: 'Fixtures',
+    color: '#ffffff',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.6,
+    description: 'Built-in standard bathtub.'
+  },
+  {
+    id: 'fixture-vanity-mirror',
+    name: 'Wall Vanity Mirror',
+    category: 'Fixtures',
+    color: '#b2ebf2',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.0,
+    description: 'Reflective mirror placed above basins.'
+  },
+
+  // ARCHITECTURAL & STRUCTURAL
+  {
+    id: 'wall-swing-door',
+    name: 'Internal Swing Door',
+    category: 'Walls',
+    color: '#8d6e63',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.1,
+    description: 'Standard hinged wooden door.'
+  },
+  {
+    id: 'wall-sliding-door-int',
+    name: 'Internal Sliding Door',
+    category: 'Walls',
+    color: '#a1887f',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.1,
+    description: 'Space-saving sliding partition door.'
+  },
+  {
+    id: 'wall-folding-door',
+    name: 'Bi-fold Door',
+    category: 'Walls',
+    color: '#d7ccc8',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.1,
+    description: 'Folding accordion door.'
+  },
+  {
+    id: 'wall-standard-window',
+    name: 'Standard Window',
+    category: 'Walls',
+    color: '#e1f5fe',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.2,
+    description: 'Common glass window pane for walls.'
+  },
+  {
+    id: 'wall-bay-window',
+    name: 'Bay Window',
+    category: 'Walls',
+    color: '#b3e5fc',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 1.5,
+    description: 'Protruding bay window with ledge.'
+  },
+  {
+    id: 'structure-column',
+    name: 'Structural Column',
+    category: 'Structures',
+    color: '#90a4ae',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.4,
+    description: 'Load-bearing support pillar.'
+  },
+  {
+    id: 'wall-partition',
+    name: 'Thin Partition Wall',
+    category: 'Walls',
+    color: '#cfd8dc',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 2.4,
+    description: 'Non-load bearing room divider.'
+  },
+  {
+    id: 'structure-staircase',
+    name: 'Staircase Flight',
+    category: 'Structures',
+    color: '#757575',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 2.4,
+    description: 'Steps leading to the next floor level.'
+  },
+
+  // OFFICE & UTILITY
+  {
+    id: 'furniture-study-desk',
+    name: 'Study Desk',
+    category: 'Furniture',
+    color: '#8d6e63',
+    gridWidth: 2,
+    gridLength: 1,
+    height: 0.75,
+    description: 'Writing or computer desk.'
+  },
+  {
+    id: 'furniture-office-chair',
+    name: 'Office Chair',
+    category: 'Furniture',
+    color: '#424242',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.0,
+    description: 'Wheeled ergonomic desk chair.'
+  },
+  {
+    id: 'fixture-washing-machine',
+    name: 'Washing Machine',
+    category: 'Fixtures',
+    color: '#eceff1',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.85,
+    description: 'Front or top loading laundry washer.'
+  },
+  {
+    id: 'fixture-clothes-dryer',
+    name: 'Clothes Dryer',
+    category: 'Fixtures',
+    color: '#cfd8dc',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 0.85,
+    description: 'Laundry drying machine.'
+  },
+  {
+    id: 'furniture-utility-shelf',
+    name: 'Utility Shelf',
+    category: 'Furniture',
+    color: '#b0bec5',
+    gridWidth: 1,
+    gridLength: 1,
+    height: 1.8,
+    description: 'Metal shelving for garages or utility rooms.'
   }
 ];

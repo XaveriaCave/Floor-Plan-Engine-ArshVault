@@ -213,6 +213,13 @@ export default function Workspace() {
     );
   };
 
+  // UPDATE CUSTOM COLOR IN PLACE
+  const handleUpdateEntityColor = (id: string, color: string) => {
+    setEntities((prev) =>
+      prev.map((ent) => (ent.id === id ? { ...ent, customColor: color } : ent))
+    );
+  };
+
   const handleRotatePreplaceItem = () => {
     setPlacedRotation((prev) => (prev + Math.PI / 2) % (Math.PI * 2));
   };
@@ -414,6 +421,7 @@ export default function Workspace() {
             onClearSelection={() => setSelectedEntityId(null)}
             onRemoveEntity={handleRemoveEntity}
             onUpdateEntityStoreys={handleUpdateEntityStoreys}
+            onUpdateEntityColor={handleUpdateEntityColor}
             placingStoreys={placingStoreys}
             onSetPlacingStoreys={setPlacingStoreys}
           />
@@ -446,6 +454,7 @@ export default function Workspace() {
                   onClearSelection={() => setSelectedEntityId(null)}
                   onRemoveEntity={handleRemoveEntity}
                   onUpdateEntityStoreys={handleUpdateEntityStoreys}
+                  onUpdateEntityColor={handleUpdateEntityColor}
                   placingStoreys={placingStoreys}
                   onSetPlacingStoreys={setPlacingStoreys}
                 />
