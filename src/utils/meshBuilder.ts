@@ -350,7 +350,7 @@ export function createItemMesh(
       }
       const railL = new THREE.Mesh(new THREE.BoxGeometry(0.04, itemDef.height, 0.04), metalMat);
       railL.position.set(-0.42, itemDef.height / 2, 0);
-      railL.rotation.x = -0.42;
+      railL.rotation.x = 0.42;
       const railR = railL.clone();
       railR.position.x = 0.42;
       group.add(railL, railR);
