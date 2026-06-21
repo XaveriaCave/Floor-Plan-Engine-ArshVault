@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { LayoutGrid, ArrowRight, Layers, Box, Cpu, Sparkles, ChevronRight, Activity, Globe, Eye } from 'lucide-react';
+import Footer from '../components/Footer';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative flex flex-col">
       {/* Background gradients */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10"></div>
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-cyan-600/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
@@ -31,7 +32,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 pt-20 pb-32 relative z-10">
+      <main className="max-w-7xl mx-auto px-6 pt-20 pb-32 relative z-10 flex-1 w-full">
 
         {/* HERO SECTION */}
         <div className="text-center max-w-4xl mx-auto mb-24 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both">
@@ -127,7 +128,7 @@ export default function LandingPage() {
         </div>
 
         {/* FEATURES GRID SECTION */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 fill-mode-both">
+        <div id="features" className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 fill-mode-both">
           {[
             {
               icon: Layers,
@@ -161,6 +162,8 @@ export default function LandingPage() {
           ))}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
