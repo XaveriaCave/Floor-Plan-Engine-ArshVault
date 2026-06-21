@@ -1,11 +1,12 @@
 import { ItemDefinition } from './types';
+
 export const FLOOR_ITEMS: ItemDefinition[] = [
-  // Walls
+  // ===== WALLS (basic, max 2 types) =====
   {
     id: 'wall-concrete',
     name: 'Concrete Exterior Wall',
     category: 'Walls',
-    color: '#90a4ae', // Raw concrete grey
+    color: '#90a4ae',
     gridWidth: 1,
     gridLength: 1,
     height: 2.4,
@@ -13,53 +14,21 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'wall-drywall',
-    name: 'Interior dry partition',
+    name: 'Interior Partition Wall',
     category: 'Walls',
-    color: '#eceff1', // Soft drywall white
+    color: '#eceff1',
     gridWidth: 1,
     gridLength: 1,
     height: 2.4,
     description: 'Lightweight interior partition separating living spaces.'
   },
-  {
-    id: 'wall-window',
-    name: 'Windowed Wall Panel',
-    category: 'Walls',
-    color: '#cfd8dc',
-    secondaryColor: '#80deea', // Soft cyan glass
-    gridWidth: 1,
-    gridLength: 1,
-    height: 2.4,
-    description: 'Steel framework with built-in thermal-insulated glass pane.'
-  },
-  {
-    id: 'wall-archway',
-    name: 'Architectural Archway',
-    category: 'Walls',
-    color: '#e0e0e0',
-    gridWidth: 1,
-    gridLength: 1,
-    height: 2.4,
-    description: 'An open-concept bricked architectural gateway.'
-  },
-  {
-    id: 'wall-sliding-door',
-    name: 'Glass Sliding Door',
-    category: 'Walls',
-    color: '#37474f',
-    secondaryColor: '#e0f7fa',
-    gridWidth: 1,
-    gridLength: 1,
-    height: 2.4,
-    description: 'An elegant sliding patio entrance.'
-  },
 
-  // Flooring
+  // ===== FLOORING (max 2 types) =====
   {
     id: 'floor-hardwood',
     name: 'Oak Hardwood Flooring',
     category: 'Flooring',
-    color: '#a1887f', // Deep wood tone
+    color: '#a1887f',
     secondaryColor: '#8d6e63',
     gridWidth: 1,
     gridLength: 1,
@@ -71,7 +40,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     id: 'floor-tile',
     name: 'Ceramic Grid Tile',
     category: 'Flooring',
-    color: '#e0e0e0', // Pale grey with grid grouting
+    color: '#e0e0e0',
     secondaryColor: '#bdbdbd',
     gridWidth: 1,
     gridLength: 1,
@@ -79,20 +48,8 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     isFloorTile: true,
     description: 'High-durability grout lines and non-slip tiles.'
   },
-  {
-    id: 'floor-rug',
-    name: 'Sultana Area Rug',
-    category: 'Flooring',
-    color: '#c62828', // Royal crimson pattern
-    secondaryColor: '#fbc02d',
-    gridWidth: 2,
-    gridLength: 2,
-    height: 0.06,
-    isFloorTile: true,
-    description: 'Ornate, high-pile decorative floor tapestry.'
-  },
 
-  // Fixtures & Lighting
+  // ===== LIGHTING FIXTURES (max 2 types) =====
   {
     id: 'fixture-spotlight',
     name: 'Ceiling Spotlight',
@@ -103,7 +60,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     gridLength: 1,
     height: 2.4,
     emissiveColor: '#ffea00',
-    description: 'Overhead recessed spotlight aiming sharp light indicators downwards.'
+    description: 'Overhead recessed spotlight aiming sharp light downwards.'
   },
   {
     id: 'fixture-sconce',
@@ -117,171 +74,41 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     emissiveColor: '#ffb300',
     description: 'A wall-mounted ambient light casting an upwards wash glow.'
   },
-  {
-    id: 'fixture-counter',
-    name: 'Marble Kitchen Console',
-    category: 'Fixtures',
-    color: '#f5f5f5', // Carrara white marble
-    secondaryColor: '#424242', // Chrome faucets
-    gridWidth: 2,
-    gridLength: 1,
-    height: 0.9,
-    description: 'Multi-functional island console with high-end integrated sink.'
-  },
-  {
-    id: 'fixture-refrigerator',
-    name: 'Smart Refrigerator',
-    category: 'Fixtures',
-    color: '#b0bec5', // Brushed silver
-    secondaryColor: '#00e5ff', // Neon status screen
-    gridWidth: 1,
-    gridLength: 1,
-    height: 2.0,
-    emissiveColor: '#00e5ff',
-    description: 'Double-french door tall silver cooling appliance.'
-  },
-  {
-    id: 'fixture-toilet',
-    name: 'Porcelain Toiletry Unit',
-    category: 'Fixtures',
-    color: '#ffffff',
-    gridWidth: 1,
-    gridLength: 1,
-    height: 0.8,
-    description: 'Vitreous china plumbing fixture.'
-  },
-  {
-    id: 'fixture-bathtub',
-    name: 'Deep-Soak Bathtub',
-    category: 'Fixtures',
-    color: '#ffffff',
-    secondaryColor: '#80deea', // Water shimmer
-    gridWidth: 2,
-    gridLength: 1,
-    height: 0.7,
-    description: 'Free-standing luxury ergonomic soaking tub.'
-  },
-  {
-    id: 'fixture-tv',
-    name: 'Home Entertainment Hub',
-    category: 'Fixtures',
-    color: '#212121',
-    secondaryColor: '#455a64',
-    gridWidth: 2,
-    gridLength: 1,
-    height: 1.2,
-    emissiveColor: '#29b6f6',
-    description: 'A wide solid wooden console carrying a thin glowing display panel.'
-  },
 
-  // Furniture
-  {
-    id: 'furniture-sofa',
-    name: 'L-Shape Sectional Sofa',
-    category: 'Furniture',
-    color: '#3e2723', // Espresso mahogany leather
-    secondaryColor: '#5d4037',
-    gridWidth: 2,
-    gridLength: 2,
-    height: 0.8,
-    description: 'Expansive padded leather lounge modules with corner brackets.'
-  },
-  {
-    id: 'furniture-table',
-    name: 'Mid-Century Dining Table',
-    category: 'Furniture',
-    color: '#8d6e63',
-    gridWidth: 2,
-    gridLength: 1,
-    height: 0.75,
-    description: 'Warm walnut breakfast table.'
-  },
-  {
-    id: 'furniture-chair',
-    name: 'Ergonomic Task Chair',
-    category: 'Furniture',
-    color: '#1565c0', // Royal blue mesh
-    secondaryColor: '#37474f',
-    gridWidth: 1,
-    gridLength: 1,
-    height: 1.0,
-    description: 'High-backed swivel chair with lumbar contour pads.'
-  },
-  {
-    id: 'furniture-bookshelf',
-    name: 'Hardwood Library Tower',
-    category: 'Furniture',
-    color: '#5d4037',
-    secondaryColor: '#90caf9', // Book clusters
-    gridWidth: 1,
-    gridLength: 1,
-    height: 2.1,
-    description: 'Vertical shelving filled with assorted books and ornaments.'
-  },
-  {
-    id: 'furniture-monstera',
-    name: 'Potted Broadleaf Monstera',
-    category: 'Furniture',
-    color: '#1b5e20', // Forest green foliage
-    secondaryColor: '#8d6e63', // Clay terracotta pot
-    gridWidth: 1,
-    gridLength: 1,
-    height: 1.2,
-    description: 'A lush potted houseplant with iconic leaf shapes.'
-  },
-  {
-    id: 'furniture-coffee-table',
-    name: 'Minimalist Coffee Table',
-    category: 'Furniture',
-    color: '#d7ccc8',
-    secondaryColor: '#795548',
-    gridWidth: 1,
-    gridLength: 1,
-    height: 0.45,
-    description: 'Low-profile circular tabletop resting on wooden legs.'
-  },
-  {
-    id: 'furniture-bed',
-    name: 'Deluxe King Bed Unit',
-    category: 'Furniture',
-    color: '#cfd8dc', // Light grey linen
-    secondaryColor: '#0d47a1', // Velvet blue throw
-    gridWidth: 2,
-    gridLength: 2,
-    height: 0.9,
-    description: 'Sturdy padded frame with memory foam mattress and soft pillows.'
-  },
-  
-  // LIVING & DINING AREA
+  // ===== LIVING & DINING AREA =====
   {
     id: 'furniture-sofa-set',
-    name: 'Classic Sofa Set',
+    name: 'Sofa Set',
     category: 'Furniture',
-    color: '#8d6e63',
+    color: '#3e2723',
+    secondaryColor: '#5d4037',
     gridWidth: 3,
     gridLength: 2,
     height: 0.8,
     description: 'A complete living room sofa set for family seating.'
   },
   {
-    id: 'furniture-coffee-table-rec',
-    name: 'Rectangular Coffee Table',
+    id: 'furniture-coffee-table',
+    name: 'Coffee Table',
     category: 'Furniture',
-    color: '#a1887f',
+    color: '#d7ccc8',
+    secondaryColor: '#795548',
     gridWidth: 2,
     gridLength: 1,
     height: 0.45,
-    description: 'A long coffee table for the center of the living area.'
+    description: 'Low-profile rectangular table for the center of the living area.'
   },
   {
     id: 'furniture-tv-console',
-    name: 'Modern TV Console',
+    name: 'TV Console',
     category: 'Furniture',
-    color: '#424242',
+    color: '#212121',
+    secondaryColor: '#29b6f6',
     gridWidth: 3,
     gridLength: 1,
     height: 0.6,
-    description: 'Low-profile media console unit.'
+    emissiveColor: '#29b6f6',
+    description: 'Low-profile media console with a glowing wide display panel.'
   },
   {
     id: 'furniture-accent-chair',
@@ -295,7 +122,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-dining-table-large',
-    name: 'Large Dining Table',
+    name: 'Dining Table',
     category: 'Furniture',
     color: '#5d4037',
     gridWidth: 3,
@@ -305,7 +132,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-dining-chairs',
-    name: 'Dining Chairs Set',
+    name: 'Dining Chairs',
     category: 'Furniture',
     color: '#cfd8dc',
     gridWidth: 1,
@@ -315,7 +142,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-sideboard',
-    name: 'Dining Sideboard',
+    name: 'Sideboard',
     category: 'Furniture',
     color: '#795548',
     gridWidth: 2,
@@ -324,26 +151,28 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Storage cabinet for dining ware.'
   },
   {
-    id: 'furniture-bookshelf-wide',
-    name: 'Wide Bookshelf',
+    id: 'furniture-bookshelf',
+    name: 'Bookshelf',
     category: 'Furniture',
-    color: '#8d6e63',
-    gridWidth: 2,
+    color: '#5d4037',
+    secondaryColor: '#90caf9',
+    gridWidth: 1,
     gridLength: 1,
-    height: 2.0,
-    description: 'Broad shelving unit for a home library.'
+    height: 2.1,
+    description: 'Vertical shelving filled with assorted books and ornaments.'
   },
 
-  // BEDROOM
+  // ===== BEDROOM =====
   {
     id: 'furniture-bed-frame',
-    name: 'Basic Bed Frame',
+    name: 'Bed Frame',
     category: 'Furniture',
-    color: '#bcaaa4',
+    color: '#cfd8dc',
+    secondaryColor: '#0d47a1',
     gridWidth: 2,
     gridLength: 2,
     height: 0.6,
-    description: 'Simple wooden bed frame.'
+    description: 'Sturdy bed frame with mattress, duvet and pillows.'
   },
   {
     id: 'furniture-nightstand',
@@ -357,7 +186,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-wardrobe',
-    name: 'Tall Wardrobe',
+    name: 'Wardrobe',
     category: 'Furniture',
     color: '#5d4037',
     gridWidth: 2,
@@ -367,7 +196,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-dresser',
-    name: 'Bedroom Dresser',
+    name: 'Dresser',
     category: 'Furniture',
     color: '#a1887f',
     gridWidth: 2,
@@ -387,29 +216,30 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-bench',
-    name: 'End-of-bed Bench',
+    name: 'Bench',
     category: 'Furniture',
     color: '#9e9e9e',
     gridWidth: 2,
     gridLength: 1,
     height: 0.45,
-    description: 'Upholstered seating bench.'
+    description: 'Upholstered end-of-bed seating bench.'
   },
 
-  // KITCHEN
+  // ===== KITCHEN =====
   {
     id: 'fixture-kitchen-counter',
-    name: 'Standard Kitchen Counter',
+    name: 'Kitchen Counter',
     category: 'Fixtures',
-    color: '#e0e0e0',
+    color: '#f5f5f5',
+    secondaryColor: '#424242',
     gridWidth: 2,
     gridLength: 1,
     height: 0.9,
-    description: 'Basic kitchen countertop with cabinets underneath.'
+    description: 'Marble-top kitchen countertop with integrated sink and faucet.'
   },
   {
     id: 'fixture-kitchen-sink',
-    name: 'Double Kitchen Sink',
+    name: 'Kitchen Sink',
     category: 'Fixtures',
     color: '#b0bec5',
     gridWidth: 1,
@@ -418,18 +248,20 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Stainless steel double basin sink.'
   },
   {
-    id: 'fixture-fridge-basic',
-    name: 'Standard Refrigerator',
+    id: 'fixture-refrigerator',
+    name: 'Refrigerator',
     category: 'Fixtures',
-    color: '#ffffff',
+    color: '#b0bec5',
+    secondaryColor: '#00e5ff',
     gridWidth: 1,
     gridLength: 1,
-    height: 1.8,
-    description: 'Standard white cooling appliance.'
+    height: 2.0,
+    emissiveColor: '#00e5ff',
+    description: 'Double-french door tall silver cooling appliance with a smart display.'
   },
   {
     id: 'fixture-cooking-range',
-    name: 'Cooking Range / Oven',
+    name: 'Cooking Range',
     category: 'Fixtures',
     color: '#37474f',
     gridWidth: 1,
@@ -439,7 +271,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'fixture-dishwasher',
-    name: 'Dishwasher Unit',
+    name: 'Dishwasher',
     category: 'Fixtures',
     color: '#cfd8dc',
     gridWidth: 1,
@@ -478,10 +310,10 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'High stool for kitchen islands or bars.'
   },
 
-  // BATHROOM
+  // ===== BATHROOM =====
   {
     id: 'fixture-wash-basin',
-    name: 'Bathroom Wash Basin',
+    name: 'Wash Basin',
     category: 'Fixtures',
     color: '#ffffff',
     gridWidth: 1,
@@ -491,17 +323,17 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'fixture-toilet-bowl',
-    name: 'Standard Toilet Bowl',
+    name: 'Toilet Bowl',
     category: 'Fixtures',
     color: '#ffffff',
     gridWidth: 1,
     gridLength: 1,
     height: 0.8,
-    description: 'Standard white toilet.'
+    description: 'Vitreous china plumbing fixture with cistern.'
   },
   {
     id: 'fixture-shower-enclosure',
-    name: 'Glass Shower Enclosure',
+    name: 'Shower Enclosure',
     category: 'Fixtures',
     color: '#e0f7fa',
     gridWidth: 1,
@@ -510,18 +342,19 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Standing shower unit with glass doors.'
   },
   {
-    id: 'fixture-bathtub-basic',
-    name: 'Standard Bathtub',
+    id: 'fixture-bathtub',
+    name: 'Bathtub',
     category: 'Fixtures',
     color: '#ffffff',
+    secondaryColor: '#80deea',
     gridWidth: 2,
     gridLength: 1,
-    height: 0.6,
-    description: 'Built-in standard bathtub.'
+    height: 0.7,
+    description: 'Free-standing soaking bathtub.'
   },
   {
     id: 'fixture-vanity-mirror',
-    name: 'Wall Vanity Mirror',
+    name: 'Vanity Mirror',
     category: 'Fixtures',
     color: '#b2ebf2',
     gridWidth: 1,
@@ -530,10 +363,10 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Reflective mirror placed above basins.'
   },
 
-  // ARCHITECTURAL & STRUCTURAL
+  // ===== ARCHITECTURAL & STRUCTURAL =====
   {
     id: 'wall-swing-door',
-    name: 'Internal Swing Door',
+    name: 'Swing Door',
     category: 'Walls',
     color: '#8d6e63',
     gridWidth: 1,
@@ -542,18 +375,19 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Standard hinged wooden door.'
   },
   {
-    id: 'wall-sliding-door-int',
-    name: 'Internal Sliding Door',
+    id: 'wall-sliding-door',
+    name: 'Sliding Door',
     category: 'Walls',
-    color: '#a1887f',
+    color: '#37474f',
+    secondaryColor: '#e0f7fa',
     gridWidth: 1,
     gridLength: 1,
-    height: 2.1,
-    description: 'Space-saving sliding partition door.'
+    height: 2.4,
+    description: 'An elegant sliding glass patio entrance.'
   },
   {
     id: 'wall-folding-door',
-    name: 'Bi-fold Door',
+    name: 'Folding Door',
     category: 'Walls',
     color: '#d7ccc8',
     gridWidth: 1,
@@ -562,14 +396,15 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Folding accordion door.'
   },
   {
-    id: 'wall-standard-window',
+    id: 'wall-window',
     name: 'Standard Window',
     category: 'Walls',
-    color: '#e1f5fe',
+    color: '#cfd8dc',
+    secondaryColor: '#80deea',
     gridWidth: 1,
     gridLength: 1,
-    height: 1.2,
-    description: 'Common glass window pane for walls.'
+    height: 2.4,
+    description: 'Steel framework with built-in thermal-insulated glass pane.'
   },
   {
     id: 'wall-bay-window',
@@ -593,7 +428,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'wall-partition',
-    name: 'Thin Partition Wall',
+    name: 'Partition Wall',
     category: 'Walls',
     color: '#cfd8dc',
     gridWidth: 1,
@@ -603,7 +438,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'structure-staircase',
-    name: 'Staircase Flight',
+    name: 'Staircase',
     category: 'Structures',
     color: '#757575',
     gridWidth: 2,
@@ -612,7 +447,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
     description: 'Steps leading to the next floor level.'
   },
 
-  // OFFICE & UTILITY
+  // ===== OFFICE & UTILITY =====
   {
     id: 'furniture-study-desk',
     name: 'Study Desk',
@@ -655,7 +490,7 @@ export const FLOOR_ITEMS: ItemDefinition[] = [
   },
   {
     id: 'furniture-utility-shelf',
-    name: 'Utility Shelf',
+    name: 'Storage Rack',
     category: 'Furniture',
     color: '#b0bec5',
     gridWidth: 1,

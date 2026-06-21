@@ -3,7 +3,8 @@ import { GridEntity, ItemDefinition } from '../types';
 
 /**
  * Creates a procedural Three.js Object3D/Group representing a specific placed entity.
- * Uses high-fidelity compound geometries, rich colors, and proper material specs.
+ * Uses compound geometries, material variety, and proper lighting response so pieces
+ * read clearly in both the 2D plan and the 3D viewport.
  */
 export function createItemMesh(
   entity: GridEntity,
@@ -17,23 +18,18 @@ export function createItemMesh(
   const primaryColor = new THREE.Color(entity.customColor || itemDef.color);
   const secondaryColor = itemDef.secondaryColor
     ? new THREE.Color(itemDef.secondaryColor)
-    : primaryColor.clone().multiplyScalar(0.7);
+    : primaryColor.clone().multiplyScalar(0.72);
 
-  // Dynamically compute height scaling based on customizable storeys (0 to 90)
   const isStructure = itemDef.category === 'Structures';
   const baseStoreys = 10;
-  // If entity.storeys is defined, we use it. Otherwise, default structures to 10 storeys.
   const storeys = entity.storeys !== undefined
     ? entity.storeys
     : (isStructure ? 10 : undefined);
 
-  // finalHeight scales itemDef.height proportionally based on the active storeys counter (relative to base 10 storeys)
-  // If storeys is 0, give it a minor flat slab height of 0.15.
   const finalHeight = storeys !== undefined
     ? (storeys === 0 ? 0.15 : (storeys / baseStoreys) * itemDef.height)
     : itemDef.height;
 
-  // Set up standard emissive details for night mode
   let isEmissive = false;
   let emissiveColor = new THREE.Color(0x000000);
   let emissiveIntensity = 0.0;
@@ -41,809 +37,332 @@ export function createItemMesh(
   if (itemDef.emissiveColor && (isNight || isSunset)) {
     isEmissive = true;
     emissiveColor = new THREE.Color(itemDef.emissiveColor);
-    emissiveIntensity = isNight ? 4.5 : 1.2;
+    emissiveIntensity = isNight ? 3.2 : 1.0;
   }
 
-  // Helper to create shared stylized materials
   const createMaterial = (
     color: THREE.Color,
-    roughness = 0.5,
-    metalness = 0.1,
+    roughness = 0.55,
+    metalness = 0.08,
     transparent = false,
     opacity = 1.0
   ) => {
     return new THREE.MeshStandardMaterial({
-      color: color,
-      roughness: roughness,
-      metalness: metalness,
-      transparent: transparent,
-      opacity: opacity,
+      color,
+      roughness,
+      metalness,
+      transparent,
+      opacity,
       shadowSide: THREE.DoubleSide,
     });
   };
 
   const isDaylight = !isNight && !isSunset;
-  const mainRoughness = isStructure && isDaylight ? 0.22 : 0.4;
-  const mainMetalness = isStructure && isDaylight ? 0.42 : 0.15;
-  const mainMat = createMaterial(primaryColor, mainRoughness, mainMetalness);
+  const mainMat = createMaterial(primaryColor, isStructure && isDaylight ? 0.25 : 0.55, isStructure && isDaylight ? 0.3 : 0.06);
 
-  // Separate glowing material for night effects
   const glowMat = new THREE.MeshStandardMaterial({
     color: isEmissive ? emissiveColor : secondaryColor,
     emissive: isEmissive ? emissiveColor : new THREE.Color(0x000000),
-    emissiveIntensity: emissiveIntensity,
-    roughness: 0.2,
-    metalness: 0.1,
+    emissiveIntensity,
+    roughness: 0.25,
+    metalness: 0.08,
   });
 
-  const secMat = createMaterial(secondaryColor, isDaylight ? 0.3 : 0.6, isDaylight ? 0.3 : 0.05);
-  const darkMat = createMaterial(new THREE.Color(0x222222), 0.7, 0.4);
-  const metalMat = createMaterial(new THREE.Color(0x90a4ae), 0.25, 0.85);
+  const secMat = createMaterial(secondaryColor, 0.45, 0.1);
+  const darkMat = createMaterial(new THREE.Color(0x232730), 0.6, 0.35);
+  const metalMat = createMaterial(new THREE.Color(0x9aa7b0), 0.22, 0.85);
+  const fabricMat = createMaterial(primaryColor, 0.85, 0.0);
+  const woodMat = createMaterial(primaryColor, 0.5, 0.04);
 
-  // Real glass mirror material for high-fidelity reflections during daylight
   const glassMat = new THREE.MeshStandardMaterial({
     color: isDaylight ? new THREE.Color(0x1976d2) : new THREE.Color(0x80deea),
-    roughness: 0.04,
-    metalness: isDaylight ? 0.95 : 0.85,
+    roughness: 0.05,
+    metalness: 0.9,
     transparent: true,
-    opacity: isDaylight ? 0.72 : 0.45,
+    opacity: isDaylight ? 0.65 : 0.4,
     shadowSide: THREE.DoubleSide,
   });
 
-  const tileWidth = 0.95; // slightly smaller than 1.0 to give subtle grid visibility
+  const ceramicMat = createMaterial(new THREE.Color(entity.customColor || itemDef.color), 0.15, 0.0);
 
-  // Custom visual builders based on item def ID
+  const tileWidth = 0.95;
+
+  // --- shared helper builders -------------------------------------------------
+
+  /** Generic chair: base/legs, seat cushion, backrest. Footprint-aware. */
+  const buildChair = (opts: { seatH: number; hasArms?: boolean; swivel?: boolean }) => {
+    const { seatH, hasArms, swivel } = opts;
+    if (swivel) {
+      const baseRing = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.04, 16), darkMat);
+      baseRing.position.y = 0.02;
+      group.add(baseRing);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, seatH - 0.08, 8), metalMat);
+      stem.position.y = seatH / 2;
+      group.add(stem);
+    } else {
+      [[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, seatH - 0.04, 6), woodMat);
+        leg.position.set(x, (seatH - 0.04) / 2, z);
+        leg.castShadow = true;
+        group.add(leg);
+      });
+    }
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.42), fabricMat);
+    seat.position.y = seatH;
+    seat.castShadow = true;
+    seat.receiveShadow = true;
+    group.add(seat);
+
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.06), fabricMat);
+    back.position.set(0, seatH + 0.28, -0.18);
+    back.castShadow = true;
+    group.add(back);
+
+    if (hasArms) {
+      [-0.21, 0.21].forEach((x) => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.36), darkMat);
+        arm.position.set(x, seatH + 0.12, -0.02);
+        group.add(arm);
+      });
+    }
+  };
+
+  /** Generic tall/short cabinet-style case furniture (wardrobe, dresser, pantry, sideboard). */
+  const buildCabinet = (w: number, h: number, d: number, drawerRows: number, doors: number) => {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mainMat);
+    body.position.y = h / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    if (doors > 0) {
+      const doorW = (w - 0.04) / doors;
+      for (let i = 0; i < doors; i++) {
+        const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, h - 0.1, 0.02), secMat);
+        doorPanel.position.set(-w / 2 + doorW * i + doorW / 2 + 0.01, h / 2, d / 2 + 0.011);
+        group.add(doorPanel);
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 6), metalMat);
+        handle.rotation.z = Math.PI / 2;
+        handle.position.set(-w / 2 + doorW * i + doorW - 0.04, h / 2, d / 2 + 0.03);
+        group.add(handle);
+      }
+    } else {
+      for (let r = 0; r < drawerRows; r++) {
+        const rowH = (h - 0.08) / drawerRows;
+        const drawer = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, rowH - 0.025, 0.02), secMat);
+        drawer.position.set(0, rowH / 2 + r * rowH + 0.04, d / 2 + 0.011);
+        group.add(drawer);
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.018, 0.02), metalMat);
+        handle.position.set(0, rowH / 2 + r * rowH + 0.04, d / 2 + 0.03);
+        group.add(handle);
+      }
+    }
+  };
+
+  /** Generic boxy appliance with a contrasting front control panel. */
+  const buildAppliance = (w: number, h: number, d: number, panelGlow = false) => {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mainMat);
+    body.position.y = h / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(w * 0.5, h * 0.16, 0.02), panelGlow ? glowMat : darkMat);
+    panel.position.set(0, h * 0.82, d / 2 + 0.011);
+    group.add(panel);
+
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.42, 0.025, 0.02), metalMat);
+    handle.position.set(0, h * 0.55, d / 2 + 0.02);
+    group.add(handle);
+  };
+
+  /** Generic wall-mounted door leaf within a 1x1 tile, used for swing/folding doors. */
+  const buildDoorLeaf = (folding = false) => {
+    const frameThickness = 0.12;
+    const colL = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, itemDef.height, 0.16), secMat);
+    colL.position.set(-tileWidth / 2 + frameThickness / 2, itemDef.height / 2, 0);
+    const colR = colL.clone();
+    colR.position.x = tileWidth / 2 - frameThickness / 2;
+    group.add(colL, colR);
+
+    const leafW = tileWidth - frameThickness * 2 - 0.04;
+    if (folding) {
+      const half = leafW / 2;
+      const leaf1 = new THREE.Mesh(new THREE.BoxGeometry(half, itemDef.height - 0.1, 0.04), mainMat);
+      leaf1.position.set(-leafW / 4, (itemDef.height - 0.1) / 2, 0.04);
+      leaf1.rotation.y = 0.5;
+      const leaf2 = leaf1.clone();
+      leaf2.position.x = leafW / 4;
+      leaf2.rotation.y = -0.5;
+      group.add(leaf1, leaf2);
+    } else {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(leafW, itemDef.height - 0.1, 0.05), mainMat);
+      leaf.position.set(-0.05, (itemDef.height - 0.1) / 2, 0.05);
+      leaf.rotation.y = 0.55;
+      leaf.castShadow = true;
+      group.add(leaf);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), metalMat);
+      knob.position.set(leafW * Math.cos(0.55) - 0.05, (itemDef.height - 0.1) * 0.45, leafW * Math.sin(0.55) + 0.05);
+      group.add(knob);
+    }
+  };
+
+  /** Generic sanitary fixture base (basin / mirror / shower glass). */
+  const buildBasin = () => {
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.4), ceramicMat);
+    counter.position.y = 0.82;
+    counter.castShadow = true;
+    group.add(counter);
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.12, 16), ceramicMat);
+    bowl.position.set(0, 0.74, 0);
+    group.add(bowl);
+    const tap = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.18, 6), metalMat);
+    tap.position.set(0, 0.92, -0.12);
+    group.add(tap);
+    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.7, 10), ceramicMat);
+    pedestal.position.y = 0.35;
+    group.add(pedestal);
+  };
+
+  // --- specific item builders --------------------------------------------------
+
   switch (itemDef.id) {
-    // === CITY MODE: STRUCTURES ===
-    case 'residential-low': {
-      // Base building block
-      const baseGeo = new THREE.BoxGeometry(tileWidth, 0.6, tileWidth);
-      const baseMesh = new THREE.Mesh(baseGeo, mainMat);
-      baseMesh.position.y = 0.3;
-      baseMesh.castShadow = true;
-      baseMesh.receiveShadow = true;
-      group.add(baseMesh);
-
-      // Angled Roof (using a pyramid or translated box structure)
-      const roofGeo = new THREE.ConeGeometry(0.72, 0.6, 4);
-      const roofMesh = new THREE.Mesh(roofGeo, secMat);
-      roofMesh.rotation.y = Math.PI / 4; // align faces with box
-      roofMesh.position.y = 0.9;
-      roofMesh.castShadow = true;
-      group.add(roofMesh);
-
-      // Tiny chimney
-      const chimneyGeo = new THREE.BoxGeometry(0.12, 0.4, 0.12);
-      const chimney = new THREE.Mesh(chimneyGeo, darkMat);
-      chimney.position.set(0.2, 0.8, 0.2);
-      group.add(chimney);
-
-      // Cozy door
-      const doorGeo = new THREE.BoxGeometry(0.2, 0.4, 0.05);
-      const door = new THREE.Mesh(doorGeo, secMat);
-      door.position.set(0, 0.2, 0.48);
-      group.add(door);
-
-      // Glowing Windows
-      for (const offset of [-0.25, 0.25]) {
-        const winGeo = new THREE.BoxGeometry(0.15, 0.15, 0.05);
-        if (isNight) {
-          winGeo.translate(offset, 0.45, 0.48);
-          group.add(new THREE.Mesh(winGeo, glowMat));
-        } else {
-          winGeo.translate(offset, 0.45, 0.48);
-          group.add(new THREE.Mesh(winGeo, glassMat));
-        }
-      }
-      break;
-    }
-
-    case 'skyscraper-modern': {
-      // Main soaring glass block
-      const mainGeo = new THREE.BoxGeometry(tileWidth, finalHeight - 0.5, tileWidth);
-      const mainMesh = new THREE.Mesh(mainGeo, mainMat);
-      mainMesh.position.y = (finalHeight - 0.5) / 2;
-      mainMesh.castShadow = true;
-      mainMesh.receiveShadow = true;
-      group.add(mainMesh);
-
-      // Crown structural tier
-      const crownGeo = new THREE.BoxGeometry(tileWidth * 0.8, 0.3, tileWidth * 0.8);
-      const crownMesh = new THREE.Mesh(crownGeo, secMat);
-      crownMesh.position.y = finalHeight - 0.35;
-      crownMesh.castShadow = true;
-      group.add(crownMesh);
-
-      // Antenna needles
-      const antGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.6);
-      const antenna = new THREE.Mesh(antGeo, metalMat);
-      antenna.position.set(0, finalHeight + 0.1, 0);
-      group.add(antenna);
-
-      // Glowing tip
-      const tipGeo = new THREE.SphereGeometry(0.06, 8, 8);
-      const tip = new THREE.Mesh(tipGeo, glowMat);
-      tip.position.set(0, finalHeight + 0.4, 0);
-      group.add(tip);
-
-      // High-Fidelity Day Light structural columns (chrome steel) on the corners
-      const cornerSteelMat = createMaterial(new THREE.Color(0xd1d5db), 0.1, 0.9);
-      const colGeo = new THREE.BoxGeometry(0.04, finalHeight - 0.5, 0.04);
-      const offsets = [-tileWidth / 2, tileWidth / 2];
-      offsets.forEach((ox) => {
-        offsets.forEach((oz) => {
-          const colMesh = new THREE.Mesh(colGeo, cornerSteelMat);
-          colMesh.position.set(ox, (finalHeight - 0.5) / 2, oz);
-          colMesh.castShadow = true;
-          group.add(colMesh);
-        });
-      });
-
-      // Windows and facade horizontal panels stripes
-      const floorsCount = Math.floor(finalHeight / 0.4);
-      for (let f = 1; f < floorsCount; f++) {
-        const yCoord = f * 0.4;
-        // Horizontal bands
-        const bandGeo = new THREE.BoxGeometry(tileWidth * 1.015, 0.08, tileWidth * 1.015);
-        const winMesh = new THREE.Mesh(bandGeo, isNight ? glowMat : glassMat);
-        winMesh.position.y = yCoord;
-        winMesh.castShadow = true;
-        group.add(winMesh);
-      }
-      break;
-    }
-
-    case 'cyberpunk-tower': {
-      const hScale = finalHeight / 5.5;
-
-      // Tier 1 Base
-      const t1Geo = new THREE.CylinderGeometry(0.48, 0.5, 2.0 * hScale, 6);
-      const t1 = new THREE.Mesh(t1Geo, mainMat);
-      t1.position.y = 1.0 * hScale;
-      t1.castShadow = true;
-      t1.receiveShadow = true;
-      group.add(t1);
-
-      // Tier 2 Middle
-      const t2Geo = new THREE.CylinderGeometry(0.35, 0.42, 2.0 * hScale, 6);
-      const t2 = new THREE.Mesh(t2Geo, secMat);
-      t2.position.y = 3.0 * hScale;
-      t2.castShadow = true;
-      group.add(t2);
-
-      // Tier 3 Spreading Top
-      const t3Geo = new THREE.BoxGeometry(0.8, 0.8 * hScale, 0.8);
-      const t3 = new THREE.Mesh(t3Geo, darkMat);
-      t3.position.y = 4.4 * hScale;
-      t3.castShadow = true;
-      group.add(t3);
-
-      // Observation glass ring deck (Highly realistic in Daylight)
-      const ringGeo = new THREE.TorusGeometry(0.52, 0.08, 12, 24);
-      const deckRing = new THREE.Mesh(ringGeo, glassMat);
-      deckRing.rotation.x = Math.PI / 2;
-      deckRing.position.y = 3.6 * hScale;
-      group.add(deckRing);
-
-      // Dual antenna arrays
-      const a1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.2 * hScale), metalMat);
-      a1.position.set(-0.2, 5.2 * hScale, 0);
-      a1.rotation.z = -0.15;
-      const a2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.8 * hScale), metalMat);
-      a2.position.set(0.2, 5.0 * hScale, 0);
-      a2.rotation.z = 0.15;
-      group.add(a1);
-      group.add(a2);
-
-      // Side structural support braces
-      const braceGeo = new THREE.CylinderGeometry(0.02, 0.02, 4.0 * hScale);
-      const braceL = new THREE.Mesh(braceGeo, metalMat);
-      braceL.position.set(-0.55, 2.0 * hScale, 0);
-      braceL.rotation.z = 0.1;
-      const braceR = braceL.clone();
-      braceR.position.x = 0.55;
-      braceR.rotation.z = -0.1;
-      group.add(braceL);
-      group.add(braceR);
-
-      // Vertical fluorescent/neon accents
-      const bandGeo = new THREE.BoxGeometry(0.1, finalHeight - 1.2 * hScale, 1.04);
-      const band = new THREE.Mesh(bandGeo, glowMat);
-      band.position.y = (finalHeight - 1.2 * hScale) / 2 + 0.3 * hScale;
-      group.add(band);
-      break;
-    }
-
-    case 'factory': {
-      const fScale = finalHeight / 2.0;
-
-      // Main industrial hall (fits 2x1 grid)
-      const coreGeo = new THREE.BoxGeometry(1.9, 1.2 * fScale, tileWidth);
-      const mainBlock = new THREE.Mesh(coreGeo, mainMat);
-      mainBlock.position.set(0.48, (0.6 * fScale), 0);
-      mainBlock.castShadow = true;
-      mainBlock.receiveShadow = true;
-      group.add(mainBlock);
-
-      // Angled corrugated roof panels
-      const roof1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, tileWidth * 1.02), secMat);
-      roof1.position.set(0.0, 1.25 * fScale, 0);
-      roof1.rotation.z = 0.18;
-      const roof2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, tileWidth * 1.02), secMat);
-      roof2.position.set(0.96, 1.25 * fScale, 0);
-      roof2.rotation.z = -0.18;
-      group.add(roof1);
-      group.add(roof2);
-
-      // Heavy boiler piping and ventilation cylinders
-      const stackGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.6 * fScale, 8);
-      const stack1 = new THREE.Mesh(stackGeo, metalMat);
-      stack1.position.set(0.4, 1.4 * fScale, -0.2);
-      stack1.castShadow = true;
-      group.add(stack1);
-
-      // Loading bay roller shutter door at the base
-      const shutterMat = createMaterial(new THREE.Color(0xb0bec5), 0.4, 0.85);
-      const doorGeo = new THREE.BoxGeometry(0.5, 0.5 * fScale, 0.02);
-      const shDoor = new THREE.Mesh(doorGeo, shutterMat);
-      shDoor.position.set(0, (0.25 * fScale), tileWidth / 2 + 0.015);
-      shDoor.castShadow = true;
-      group.add(shDoor);
-
-      // Large extraction fan window circular casing
-      const ventGeo = new THREE.TorusGeometry(0.18, 0.04, 8, 16);
-      const ventFan = new THREE.Mesh(ventGeo, metalMat);
-      ventFan.position.set(0.8, 0.6 * fScale, tileWidth / 2 + 0.015);
-      group.add(ventFan);
-
-      // Steam fumes cap
-      if (isNight || isSunset) {
-        const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), glowMat);
-        glowSphere.position.set(0.4, 2.2 * fScale, -0.2);
-        group.add(glowSphere);
-      }
-      break;
-    }
-
-    case 'power-plant': {
-      const pScale = finalHeight / 3.2;
-
-      // Dual futuristic cooling towers (ground dimension 2x2 grid)
-      const centers = [
-        { x: 0, z: 0 },
-        { x: 0.9, z: 0.9 },
-      ];
-
-      centers.forEach((c) => {
-        const towerGroup = new THREE.Group();
-        towerGroup.position.set(c.x, 0, c.z);
-
-        // Hyperbolic-like cooling tower constructed of stacked cylinders
-        const botGeo = new THREE.CylinderGeometry(0.35, 0.48, 1.2 * pScale, 12);
-        const bot = new THREE.Mesh(botGeo, mainMat);
-        bot.position.y = 0.6 * pScale;
-        bot.castShadow = true;
-        bot.receiveShadow = true;
-        towerGroup.add(bot);
-
-        const topGeo = new THREE.CylinderGeometry(0.4, 0.35, 1.2 * pScale, 12);
-        const top = new THREE.Mesh(topGeo, mainMat);
-        top.position.y = 1.8 * pScale;
-        top.castShadow = true;
-        towerGroup.add(top);
-
-        // Glowing alert ring on top brim
-        const ringGeo = new THREE.TorusGeometry(0.4, 0.05, 8, 16);
-        const ring = new THREE.Mesh(ringGeo, glowMat);
-        ring.rotation.x = Math.PI / 2;
-        ring.position.y = 2.4 * pScale;
-        towerGroup.add(ring);
-
-        group.add(towerGroup);
-      });
-      break;
-    }
-
-    case 'bridge': {
-      const bScale = finalHeight / 2.5;
-
-      // Spanning structure 1x3 grid
-      const pathGeo = new THREE.BoxGeometry(0.8, 0.12, 2.9);
-      const pathway = new THREE.Mesh(pathGeo, mainMat);
-      pathway.position.set(0, 0.6 * bScale, 0.9);
-      pathway.castShadow = true;
-      pathway.receiveShadow = true;
-      group.add(pathway);
-
-      // Twin steel pillars/pylons
-      const p1Geo = new THREE.BoxGeometry(0.12, 1.8 * bScale, 0.12);
-      const p1 = new THREE.Mesh(p1Geo, metalMat);
-      p1.position.set(-0.35, 1.2 * bScale, 0.9);
-      p1.castShadow = true;
-      const p2 = p1.clone();
-      p2.position.x = 0.35;
-      group.add(p1);
-      group.add(p2);
-
-      // Support trusses (slanted rods)
-      const trussGeo = new THREE.BoxGeometry(0.03, 1.5 * bScale, 0.03);
-      const truss1 = new THREE.Mesh(trussGeo, metalMat);
-      truss1.position.set(-0.35, 1.1 * bScale, 0.0);
-      truss1.rotation.x = 0.6;
-      group.add(truss1);
-
-      const truss2 = truss1.clone();
-      truss2.position.set(-0.35, 1.1 * bScale, 1.8);
-      truss2.rotation.x = -0.6;
-      group.add(truss2);
-
-      // If Night Mode / Cyberpunk, add hyper-bright neon cables
-      if (isNight) {
-        // Left side neon rail
-        const neonRailL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.04, 2.9), glowMat);
-        neonRailL.position.set(-0.38, 0.68 * bScale, 0.9);
-        group.add(neonRailL);
-
-        // Right side neon rail
-        const neonRailR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.04, 2.9), glowMat);
-        neonRailR.position.set(0.38, 0.68 * bScale, 0.9);
-        group.add(neonRailR);
-
-        // Suspension cable glowing arches
-        const archCylinderGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.6, 6);
-        const archL = new THREE.Mesh(archCylinderGeo, glowMat);
-        archL.position.set(-0.35, 1.3 * bScale, 0.9);
-        archL.rotation.z = Math.PI / 2;
-        group.add(archL);
-
-        const archR = archL.clone();
-        archR.position.x = 0.35;
-        group.add(archR);
-      }
-      break;
-    }
-
-    case 'hospital': {
-      const hScale = finalHeight / 2.8;
-
-      // Triple white blocks crossing each other (2x2 grid)
-      const baseBlockGeo = new THREE.BoxGeometry(1.8, 1.8 * hScale, 1.8);
-      const baseBlock = new THREE.Mesh(baseBlockGeo, mainMat);
-      baseBlock.position.set(0.48, 0.9 * hScale, 0.48);
-      baseBlock.castShadow = true;
-      baseBlock.receiveShadow = true;
-      group.add(baseBlock);
-
-      // Red cross insignia - front facing
-      const crossVert = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6 * hScale, 0.06), secMat);
-      crossVert.position.set(0.48, 1.0 * hScale, 1.39);
-      const crossHoriz = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15 * hScale, 0.06), secMat);
-      crossHoriz.position.set(0.48, 1.0 * hScale, 1.39);
-      group.add(crossVert);
-      group.add(crossHoriz);
-
-      // Cross beacon glows
-      if (isNight) {
-        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), glowMat);
-        beacon.position.set(0.48, 1.95 * hScale, 0.48);
-        group.add(beacon);
-      }
-      break;
-    }
-
-    case 'police-station': {
-      const polScale = finalHeight / 2.2;
-
-      const pGeo = new THREE.BoxGeometry(tileWidth, 1.8 * polScale, tileWidth);
-      const mainBuilding = new THREE.Mesh(pGeo, mainMat);
-      mainBuilding.position.y = 0.9 * polScale;
-      mainBuilding.castShadow = true;
-      mainBuilding.receiveShadow = true;
-      group.add(mainBuilding);
-
-      // Police garage overhang
-      const hangarGeo = new THREE.BoxGeometry(0.4, 0.8 * polScale, 0.6);
-      const hangar = new THREE.Mesh(hangarGeo, secMat);
-      hangar.position.set(0.35, 0.4 * polScale, 0.35);
-      group.add(hangar);
-
-      // Flashing alert lights on roof
-      const sirenLeft = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), glowMat);
-      sirenLeft.position.set(-0.2, 1.85 * polScale, 0.2);
-      group.add(sirenLeft);
-
-      const sirenRight = sirensRight(isNight, itemDef);
-      sirenRight.position.set(0.2, 1.85 * polScale, 0.2);
-      group.add(sirenRight);
-      break;
-    }
-
-    case 'supermarket': {
-      const mScale = finalHeight / 1.6;
-
-      // 2x2 wide shopping center
-      const mallGeo = new THREE.BoxGeometry(1.8, 1.1 * mScale, 1.8);
-      const mall = new THREE.Mesh(mallGeo, mainMat);
-      mall.position.set(0.48, 0.55 * mScale, 0.48);
-      mall.castShadow = true;
-      mall.receiveShadow = true;
-      group.add(mall);
-
-      // Green canopy
-      const canopyGeo = new THREE.BoxGeometry(1.9, 0.15 * mScale, 0.4);
-      const canopy = new THREE.Mesh(canopyGeo, secMat);
-      canopy.position.set(0.48, 0.8 * mScale, 0.9);
-      group.add(canopy);
-
-      // Sliding doors
-      const entDoor = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6 * mScale, 0.05), glassMat);
-      entDoor.position.set(0.48, 0.3 * mScale, 0.89);
-      group.add(entDoor);
-      break;
-    }
-
-    case 'wind-turbine': {
-      // Slim high pylon with propeller blades
-      const pylonGeo = new THREE.CylinderGeometry(0.06, 0.1, finalHeight - 1.2, 8);
-      const pylon = new THREE.Mesh(pylonGeo, mainMat);
-      pylon.position.y = (finalHeight - 1.2) / 2;
-      pylon.castShadow = true;
-      group.add(pylon);
-
-      // Hub node
-      const hubGeo = new THREE.SphereGeometry(0.12, 12, 12);
-      const hub = new THREE.Mesh(hubGeo, secMat);
-      hub.position.set(0, finalHeight - 1.2, 0.1);
-      group.add(hub);
-
-      // Tri-rotor blades
-      const bladeLength = 1.1;
-      for (let i = 0; i < 3; i++) {
-        const bladeGeo = new THREE.BoxGeometry(0.08, bladeLength, 0.01);
-        const blade = new THREE.Mesh(bladeGeo, mainMat);
-        blade.position.y = bladeLength / 2;
-        // Rotation offset for 3 blades
-        const armGroup = new THREE.Group();
-        armGroup.position.set(0, finalHeight - 1.2, 0.14);
-        armGroup.rotation.z = (i * Math.PI * 2) / 3;
-        armGroup.add(blade);
-        group.add(armGroup);
-      }
-      break;
-    }
-
-    // === COMMON: CITY MODE INFRASTRUCTURE ===
-    case 'road-2lane': {
-      // standard dark asphalt flat pad
-      const tar = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
-      tar.receiveShadow = true;
-      group.add(tar);
-
-      // double yellow safety stripes (z-direction)
-      const stripeGeo = new THREE.BoxGeometry(0.03, 0.008, 0.95);
-      const stripeL = new THREE.Mesh(stripeGeo, secMat);
-      stripeL.position.set(-0.04, 0.03, 0);
-      const stripeR = new THREE.Mesh(stripeGeo, secMat);
-      stripeR.position.set(0.04, 0.03, 0);
-      group.add(stripeL);
-      group.add(stripeR);
-      break;
-    }
-
-    case 'road-crossing': {
-      const tar = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
-      tar.receiveShadow = true;
-      group.add(tar);
-
-      // white zebra decals crossing horizontally and vertically
-      const addZebra = (ox: number, oz: number, r: boolean) => {
-        const zebra = new THREE.Mesh(new THREE.BoxGeometry(r ? 0.32 : 0.08, 0.008, r ? 0.08 : 0.32), secMat);
-        zebra.position.set(ox, 0.03, oz);
-        group.add(zebra);
-      };
-
-      addZebra(-0.3, 0, false);
-      addZebra(0.3, 0, false);
-      addZebra(0, -0.3, true);
-      addZebra(0, 0.3, true);
-      break;
-    }
-
-    case 'road-t-junction': {
-      const tar = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
-      tar.receiveShadow = true;
-      group.add(tar);
-
-      // 3-way divider yellow stripes
-      const straight = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.95), secMat);
-      straight.position.set(0, 0.03, 0);
-      group.add(straight);
-
-      const split = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.008, 0.03), secMat);
-      split.position.set(0.22, 0.03, 0);
-      group.add(split);
-      break;
-    }
-
-    case 'train-tracks': {
-      const bed = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
-      bed.receiveShadow = true;
-      group.add(bed);
-
-      // wooden ties (horizontal planks)
-      for (let z = -0.4; z <= 0.4; z += 0.2) {
-        const tie = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.03, 0.04), mainMat);
-        tie.position.set(0, 0.045, z);
-        group.add(tie);
-      }
-
-      // steel dual lines
-      const steelGeo = new THREE.BoxGeometry(0.02, 0.04, 1.0);
-      const railL = new THREE.Mesh(steelGeo, secMat);
-      railL.position.set(-0.25, 0.07, 0);
-      const railR = new THREE.Mesh(steelGeo, secMat);
-      railR.position.set(0.25, 0.07, 0);
-      group.add(railL);
-      group.add(railR);
-      break;
-    }
-
-    case 'streetlight': {
-      // post
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.9, 6), mainMat);
-      base.position.y = 0.95;
-      base.castShadow = true;
-      group.add(base);
-
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.12), mainMat);
-      head.position.set(0.12, 1.9, 0);
-      group.add(head);
-
-      // Light bulb sphere
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), glowMat);
-      bulb.position.set(0.22, 1.84, 0);
-      group.add(bulb);
-
-      // Translucent light cone if night/sunset
-      if (isNight || isSunset) {
-        const coneGeo = new THREE.ConeGeometry(0.6, 1.6, 12, 1, true);
-        coneGeo.translate(0, -0.8, 0);
-        const coneMat = new THREE.MeshBasicMaterial({
-          color: 0xffea00,
-          transparent: true,
-          opacity: isNight ? 0.22 : 0.08,
-          side: THREE.DoubleSide,
-        });
-        const cone = new THREE.Mesh(coneGeo, coneMat);
-        cone.position.set(0.22, 1.84, 0);
-        group.add(cone);
-      }
-      break;
-    }
-
-    case 'power-grid-pole': {
-      // wooden tall post with lateral t-bar crossbar
-      const rGrid = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 3.2, 6), mainMat);
-      rGrid.position.y = 1.6;
-      group.add(rGrid);
-
-      const cross = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.06, 0.06), mainMat);
-      cross.position.set(0, 3.0, 0);
-      group.add(cross);
-
-      // tiny isolate spheres on crossbar
-      for (const offset of [-0.5, 0, 0.5]) {
-        const iso = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), secMat);
-        iso.position.set(offset, 3.06, 0);
-        group.add(iso);
-      }
-      break;
-    }
-
-    // === COMMON: CITY MODE DECOR ===
-    case 'park-grid': {
-      // 2x2 green area
-      const ground = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 1.9), mainMat);
-      ground.position.set(0.48, 0, 0.48);
-      ground.receiveShadow = true;
-      group.add(ground);
-
-      // center sand circle
-      const pathGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.01, 16);
-      const path = new THREE.Mesh(pathGeo, secMat);
-      path.position.set(0.48, 0.03, 0.48);
-      group.add(path);
-
-      // Small bench block
-      const bench = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.15), secMat);
-      bench.position.set(0.48, 0.1, 0.1);
-      group.add(bench);
-      break;
-    }
-
-    case 'oak-trees': {
-      // thick cluster of trees
-      const treeConfigs = [
-        { px: 0, pz: 0.15, scale: 1.0 },
-        { px: -0.22, pz: -0.15, scale: 0.8 },
-        { px: 0.22, pz: -0.15, scale: 0.9 },
-      ];
-
-      treeConfigs.forEach((t) => {
-        const subGroup = new THREE.Group();
-        subGroup.position.set(t.px, 0, t.pz);
-
-        // Trunk
-        const trunkGeo = new THREE.CylinderGeometry(0.05 * t.scale, 0.08 * t.scale, 0.7 * t.scale, 6);
-        const trunk = new THREE.Mesh(trunkGeo, secMat);
-        trunk.position.y = 0.35 * t.scale;
-        trunk.castShadow = true;
-        subGroup.add(trunk);
-
-        // Crown leaves spheres
-        const leavesGeo = new THREE.SphereGeometry(0.45 * t.scale, 10, 10);
-        const leaves = new THREE.Mesh(leavesGeo, mainMat);
-        leaves.position.y = 0.9 * t.scale;
-        leaves.castShadow = true;
-        subGroup.add(leaves);
-
-        group.add(subGroup);
-      });
-      break;
-    }
-
-    case 'water-fountain': {
-      // circular fountain
-      const basinGeo = new THREE.CylinderGeometry(0.48, 0.48, 0.25, 16);
-      const basin = new THREE.Mesh(basinGeo, mainMat);
-      basin.position.y = 0.125;
-      basin.castShadow = true;
-      group.add(basin);
-
-      // sparkly water cylinder inside
-      const waterGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.05, 16);
-      const water = new THREE.Mesh(waterGeo, isNight || isSunset ? glowMat : secMat);
-      water.position.set(0, 0.22, 0);
-      group.add(water);
-
-      // center spray nozzle
-      const centerSet = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.4, 8), darkMat);
-      centerSet.position.y = 0.25;
-      group.add(centerSet);
-      break;
-    }
-
-    case 'parking-lot': {
-      const lot = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
-      lot.receiveShadow = true;
-      group.add(lot);
-
-      // Parking bay dashes
-      for (const offsetZ of [-0.3, 0, 0.3]) {
-        const lineGeo = new THREE.BoxGeometry(0.4, 0.01, 0.03);
-        const l1 = new THREE.Mesh(lineGeo, secMat);
-        l1.position.set(-0.25, 0.03, offsetZ);
-        const l2 = new THREE.Mesh(lineGeo, secMat);
-        l2.position.set(0.25, 0.03, offsetZ);
-        group.add(l1);
-        group.add(l2);
-      }
-      break;
-    }
-
-    case 'billboard-neon': {
-      // single offset post
-      const corePole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.0, 6), secMat);
-      corePole.position.y = 1.0;
-      group.add(corePole);
-
-      // large corporate sign board
-      const signGeo = new THREE.BoxGeometry(0.9, 0.5, 0.12);
-      const board = new THREE.Mesh(signGeo, mainMat);
-      board.position.set(0, 2.2, 0);
-      group.add(board);
-
-      // neon screen decal facing forward
-      const screenGeo = new THREE.BoxGeometry(0.8, 0.4, 0.04);
-      const screen = new THREE.Mesh(screenGeo, glowMat);
-      screen.position.set(0, 2.2, 0.06);
-      group.add(screen);
-      break;
-    }
-
-    // === FLOOR MODE: WALLS ===
+    // ===== WALLS =====
     case 'wall-concrete':
-    case 'wall-drywall': {
-      // Extends exactly the length of a grid cell
+    case 'wall-drywall':
+    case 'wall-partition': {
       const wallGeo = new THREE.BoxGeometry(tileWidth, itemDef.height, 0.14);
       const wall = new THREE.Mesh(wallGeo, mainMat);
       wall.position.y = itemDef.height / 2;
       wall.castShadow = true;
       wall.receiveShadow = true;
       group.add(wall);
+      // subtle base trim for visual depth
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.06, 0.16), secMat);
+      trim.position.y = 0.03;
+      group.add(trim);
       break;
     }
 
     case 'wall-window': {
-      // Wall has left column, right column, and center glass pane
       const colWidth = 0.18;
       const wallSec = new THREE.Mesh(new THREE.BoxGeometry(colWidth, itemDef.height, 0.14), mainMat);
       wallSec.position.set(-tileWidth / 2 + colWidth / 2, itemDef.height / 2, 0);
       wallSec.castShadow = true;
       const wallSecR = wallSec.clone();
       wallSecR.position.x = tileWidth / 2 - colWidth / 2;
-      group.add(wallSec);
-      group.add(wallSecR);
+      group.add(wallSec, wallSecR);
 
-      // Header lintel
       const headerGeo = new THREE.BoxGeometry(tileWidth, 0.4, 0.14);
       const header = new THREE.Mesh(headerGeo, mainMat);
       header.position.set(0, itemDef.height - 0.2, 0);
       header.castShadow = true;
       group.add(header);
 
-      // glass block in the center frame
       const winH = itemDef.height - 0.4;
       const centerWinGeo = new THREE.BoxGeometry(tileWidth - colWidth * 2, winH, 0.04);
       const win = new THREE.Mesh(centerWinGeo, glassMat);
       win.position.set(0, winH / 2, 0);
       group.add(win);
+
+      const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.03, winH, 0.05), secMat);
+      mullion.position.set(0, winH / 2, 0);
+      group.add(mullion);
       break;
     }
 
-    case 'wall-archway': {
-      // column blocks
-      const colW = 0.24;
-      const colL = new THREE.Mesh(new THREE.BoxGeometry(colW, itemDef.height - 0.5, 0.16), mainMat);
-      colL.castShadow = true;
-      colL.position.set(-tileWidth / 2 + colW / 2, (itemDef.height - 0.5) / 2, 0);
-      const colR = colL.clone();
-      colR.position.x = tileWidth / 2 - colW / 2;
-      group.add(colL);
-      group.add(colR);
+    case 'wall-bay-window': {
+      const sillGeo = new THREE.BoxGeometry(1.9, 0.08, 0.5);
+      const sill = new THREE.Mesh(sillGeo, secMat);
+      sill.position.set(0.48, 0.05, 0.15);
+      group.add(sill);
 
-      // Top lintel / arch segment
-      const archTop = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.5, 0.16), mainMat);
-      archTop.position.set(0, itemDef.height - 0.25, 0);
-      archTop.castShadow = true;
-      group.add(archTop);
+      const panes = [
+        { x: -0.05, z: 0.15, ry: 0 },
+        { x: 0.48, z: 0.3, ry: 0 },
+        { x: 1.0, z: 0.15, ry: 0 },
+      ];
+      panes.forEach((p) => {
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.3, 0.06), mainMat);
+        frame.position.set(p.x, 0.75 + 0.05, p.z);
+        group.add(frame);
+        const pane = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.1, 0.03), glassMat);
+        pane.position.set(p.x, 0.75 + 0.05, p.z + 0.02);
+        group.add(pane);
+      });
+      break;
+    }
+
+    case 'wall-swing-door': {
+      buildDoorLeaf(false);
+      break;
+    }
+
+    case 'wall-folding-door': {
+      buildDoorLeaf(true);
       break;
     }
 
     case 'wall-sliding-door': {
-      // wall panels on edges
       const edge = new THREE.Mesh(new THREE.BoxGeometry(0.12, itemDef.height, 0.16), mainMat);
       edge.position.set(-tileWidth / 2 + 0.06, itemDef.height / 2, 0);
       const edgeR = edge.clone();
       edgeR.position.x = tileWidth / 2 - 0.06;
-      group.add(edge);
-      group.add(edgeR);
+      group.add(edge, edgeR);
 
-      // Frame bars
       const sliderRails = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.08, 0.16), darkMat);
       sliderRails.position.set(0, 0.04, 0);
       const upperRails = sliderRails.clone();
       upperRails.position.y = itemDef.height - 0.04;
-      group.add(sliderRails);
-      group.add(upperRails);
+      group.add(sliderRails, upperRails);
 
-      // Sliding glass panel
       const sH = itemDef.height - 0.16;
       const panel = new THREE.Mesh(new THREE.BoxGeometry(0.68, sH, 0.04), glassMat);
-      // slightly slid open to look interactive!
       panel.position.set(0.1, sH / 2 + 0.08, -0.02);
       group.add(panel);
       break;
     }
 
-    // === FLOOR MODE: FLOORING ===
+    // ===== STRUCTURES =====
+    case 'structure-column': {
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, itemDef.height, 12), mainMat);
+      shaft.position.y = itemDef.height / 2;
+      shaft.castShadow = true;
+      shaft.receiveShadow = true;
+      group.add(shaft);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.5), secMat);
+      cap.position.y = itemDef.height - 0.05;
+      group.add(cap);
+      const base = cap.clone();
+      base.position.y = 0.05;
+      group.add(base);
+      break;
+    }
+
+    case 'structure-staircase': {
+      const steps = 8;
+      for (let i = 0; i < steps; i++) {
+        const step = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.06, 1.8 / steps), mainMat);
+        step.position.set(0, (i + 1) * (itemDef.height / steps), -0.9 + i * (1.8 / steps) + 0.9 / steps);
+        step.castShadow = true;
+        step.receiveShadow = true;
+        group.add(step);
+      }
+      const railL = new THREE.Mesh(new THREE.BoxGeometry(0.04, itemDef.height, 0.04), metalMat);
+      railL.position.set(-0.42, itemDef.height / 2, 0);
+      railL.rotation.x = -0.42;
+      const railR = railL.clone();
+      railR.position.x = 0.42;
+      group.add(railL, railR);
+      break;
+    }
+
+    // ===== FLOORING =====
     case 'floor-hardwood': {
       const plankGeo = new THREE.BoxGeometry(tileWidth, 0.05, tileWidth);
       const wood = new THREE.Mesh(plankGeo, mainMat);
       wood.receiveShadow = true;
       group.add(wood);
-
-      // subtle panel divider lines
       for (let x = -0.3; x <= 0.3; x += 0.3) {
         const line = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.008, 0.95), secMat);
         line.position.set(x, 0.026, 0);
@@ -856,57 +375,28 @@ export function createItemMesh(
       const tile = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), mainMat);
       tile.receiveShadow = true;
       group.add(tile);
-
-      // tile grout grid stripes
       const lineX = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.008, 0.018), secMat);
       lineX.position.set(0, 0.026, 0);
       group.add(lineX);
-
       const lineZ = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.008, tileWidth), secMat);
       lineZ.position.set(0, 0.026, 0);
       group.add(lineZ);
       break;
     }
 
-    case 'floor-rug': {
-      // 2x2 rug
-      const sheet = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.04, 1.7), mainMat);
-      sheet.position.set(0.35, 0, 0.35);
-      sheet.receiveShadow = true;
-      group.add(sheet);
-
-      // decorative cross stripes on the rug
-      const trimGeo = new THREE.BoxGeometry(1.6, 0.008, 0.1);
-      const trim1 = new THREE.Mesh(trimGeo, secMat);
-      trim1.position.set(0.35, 0.021, 0.1);
-      const trim2 = new THREE.Mesh(trimGeo, secMat);
-      trim2.position.set(0.35, 0.021, 0.6);
-      group.add(trim1);
-      group.add(trim2);
-      break;
-    }
-
-    // === FLOOR MODE: FIXTURES ===
+    // ===== LIGHTING FIXTURES =====
     case 'fixture-spotlight': {
-      // ceiling mount node
       const hCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.15, 8), darkMat);
       hCyl.position.y = itemDef.height - 0.075;
       group.add(hCyl);
-
-      // light emitter sphere
       const coneLight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), glowMat);
       coneLight.position.y = itemDef.height - 0.18;
       group.add(coneLight);
-
-      // ambient downward lighting cone
       if (isNight || isSunset) {
         const projection = new THREE.CylinderGeometry(0.08, 0.8, 2.0, 12, 1, true);
         projection.translate(0, -1.0, 0);
         const projectionMat = new THREE.MeshBasicMaterial({
-          color: 0xffea00,
-          transparent: true,
-          opacity: isNight ? 0.25 : 0.09,
-          side: THREE.DoubleSide,
+          color: 0xffea00, transparent: true, opacity: isNight ? 0.22 : 0.08, side: THREE.DoubleSide,
         });
         const lightBeam = new THREE.Mesh(projection, projectionMat);
         lightBeam.position.y = itemDef.height - 0.18;
@@ -916,39 +406,232 @@ export function createItemMesh(
     }
 
     case 'fixture-sconce': {
-      // wall bracket
       const mount = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.1), darkMat);
       mount.position.set(-tileWidth / 2 + 0.025, 1.5, 0);
       group.add(mount);
-
       const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 6), metalMat);
       tube.position.set(-tileWidth / 2 + 0.07, 1.5, 0);
       group.add(tube);
-
       const bulbSet = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), glowMat);
       bulbSet.position.set(-tileWidth / 2 + 0.07, 1.58, 0);
       group.add(bulbSet);
       break;
     }
 
-    case 'fixture-counter': {
-      // spans 2x1 grid
-      const cabinetGeo = new THREE.BoxGeometry(1.85, 0.88, 0.44);
-      const cabinet = new THREE.Mesh(cabinetGeo, mainMat);
+    // ===== LIVING & DINING =====
+    case 'furniture-sofa-set': {
+      const baseMain = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.32, 0.85), fabricMat);
+      baseMain.position.set(1.4, 0.16, 0.4);
+      baseMain.castShadow = true;
+      group.add(baseMain);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.55, 0.2), fabricMat);
+      back.position.set(1.4, 0.55, -0.075);
+      back.castShadow = true;
+      group.add(back);
+      for (let i = 0; i < 4; i++) {
+        const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.16, 0.7), secMat);
+        cushion.position.set(0.4 + i * 0.65, 0.4, 0.4);
+        cushion.castShadow = true;
+        group.add(cushion);
+      }
+      [0.08, 2.72].forEach((x) => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.85), fabricMat);
+        arm.position.set(x, 0.25, 0.4);
+        group.add(arm);
+      });
+      break;
+    }
+
+    case 'furniture-coffee-table': {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.05, 0.55), woodMat);
+      top.position.set(0.48, 0.42, 0);
+      top.castShadow = true;
+      group.add(top);
+      [[0.1, -0.2], [0.86, -0.2], [0.1, 0.2], [0.86, 0.2]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), secMat);
+        leg.position.set(x, 0.2, z);
+        leg.castShadow = true;
+        group.add(leg);
+      });
+      break;
+    }
+
+    case 'furniture-tv-console': {
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.5, 0.4), mainMat);
+      stand.position.set(1.4, 0.25, 0);
+      stand.castShadow = true;
+      group.add(stand);
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.95, 0.05), darkMat);
+      screen.position.set(1.4, 1.0, -0.1);
+      screen.castShadow = true;
+      group.add(screen);
+      const display = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.88, 0.01), glowMat);
+      display.position.set(1.4, 1.0, -0.072);
+      group.add(display);
+      break;
+    }
+
+    case 'furniture-accent-chair': {
+      buildChair({ seatH: 0.46, hasArms: true });
+      break;
+    }
+
+    case 'furniture-office-chair': {
+      buildChair({ seatH: 0.48, hasArms: true, swivel: true });
+      break;
+    }
+
+    case 'furniture-bar-stool': {
+      buildChair({ seatH: 0.7, swivel: true });
+      break;
+    }
+
+    case 'furniture-dining-chairs': {
+      buildChair({ seatH: 0.46 });
+      break;
+    }
+
+    case 'furniture-dining-table-large': {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.06, 1.85), woodMat);
+      top.position.set(1.4, 0.74, 0.48);
+      top.castShadow = true;
+      group.add(top);
+      [[0.15, 0.15], [2.65, 0.15], [0.15, 0.81], [2.65, 0.81]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), secMat);
+        leg.position.set(x, 0.35, z);
+        leg.castShadow = true;
+        group.add(leg);
+      });
+      break;
+    }
+
+    case 'furniture-sideboard': {
+      group.position.set(0, 0, 0);
+      buildCabinet(1.9, 0.9, 0.45, 0, 2);
+      break;
+    }
+
+    case 'furniture-bookshelf': {
+      const shellGeo = new THREE.BoxGeometry(0.85, 2.05, 0.38);
+      const cover = new THREE.Mesh(shellGeo, mainMat);
+      cover.position.y = 1.025;
+      cover.castShadow = true;
+      group.add(cover);
+      for (let h = 0.3; h < 1.9; h += 0.45) {
+        const bookG = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.22), secMat);
+        bookG.position.set(0.12, h, 0.08);
+        group.add(bookG);
+      }
+      break;
+    }
+
+    // ===== BEDROOM =====
+    case 'furniture-bed-frame': {
+      const woodenBase = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.25, 1.84), woodMat);
+      woodenBase.position.set(0.48, 0.125, 0.48);
+      woodenBase.castShadow = true;
+      woodenBase.receiveShadow = true;
+      group.add(woodenBase);
+
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.32, 1.72), createMaterial(new THREE.Color(0xf5f5f5), 0.8, 0));
+      mattress.position.set(0.48, 0.41, 0.48);
+      mattress.castShadow = true;
+      group.add(mattress);
+
+      const duvet = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.18, 1.1), secMat);
+      duvet.position.set(0.48, 0.5, 0.78);
+      duvet.castShadow = true;
+      group.add(duvet);
+
+      [0.15, 0.81].forEach((off) => {
+        const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.08, 0.32), createMaterial(new THREE.Color(0xffffff), 0.9, 0));
+        pillow.position.set(off, 0.62, 0.1);
+        group.add(pillow);
+      });
+
+      [[0.06, 0.06], [0.9, 0.06], [0.06, 0.9], [0.9, 0.9]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.06), secMat);
+        leg.position.set(x, 0.05, z);
+        group.add(leg);
+      });
+      break;
+    }
+
+    case 'furniture-nightstand': {
+      buildCabinet(0.5, 0.5, 0.45, 2, 0);
+      break;
+    }
+
+    case 'furniture-wardrobe': {
+      buildCabinet(1.85, 2.2, 0.55, 0, 2);
+      break;
+    }
+
+    case 'furniture-dresser': {
+      buildCabinet(1.85, 0.9, 0.5, 3, 0);
+      break;
+    }
+
+    case 'furniture-vanity-table': {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.05, 0.5), woodMat);
+      top.position.set(0.48, 0.72, 0);
+      top.castShadow = true;
+      group.add(top);
+      const drawerBlock = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.65, 0.45), secMat);
+      drawerBlock.position.set(0.85, 0.36, 0);
+      group.add(drawerBlock);
+      const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.04), secMat);
+      mirrorFrame.position.set(0.1, 1.1, -0.2);
+      group.add(mirrorFrame);
+      const mirrorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.01), glassMat);
+      mirrorGlass.position.set(0.1, 1.1, -0.18);
+      group.add(mirrorGlass);
+      break;
+    }
+
+    case 'furniture-bench': {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 0.5), fabricMat);
+      top.position.set(0.48, 0.39, 0);
+      top.castShadow = true;
+      group.add(top);
+      [[0.1, -0.18], [0.86, -0.18], [0.1, 0.18], [0.86, 0.18]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.33, 0.05), secMat);
+        leg.position.set(x, 0.165, z);
+        group.add(leg);
+      });
+      break;
+    }
+
+    // ===== KITCHEN =====
+    case 'fixture-kitchen-counter': {
+      const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.88, 0.44), mainMat);
       cabinet.position.set(0.48, 0.44, 0);
       cabinet.castShadow = true;
       cabinet.receiveShadow = true;
       group.add(cabinet);
-
-      // metallic chrome faucet assembly
       const tap = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6), metalMat);
       tap.position.set(0.48, 0.98, 0.1);
       group.add(tap);
-
-      // sink hollow plane
       const sink = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.01, 0.32), darkMat);
       sink.position.set(0.48, 0.885, -0.05);
       group.add(sink);
+      break;
+    }
+
+    case 'fixture-kitchen-sink': {
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(tileWidth, 0.05, tileWidth), ceramicMat);
+      counter.position.y = 0.87;
+      group.add(counter);
+      const basin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.6), darkMat);
+      basin.position.y = 0.78;
+      group.add(basin);
+      const tap = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 6), metalMat);
+      tap.position.set(0, 1.02, -0.2);
+      group.add(tap);
+      const cabinetBelow = new THREE.Mesh(new THREE.BoxGeometry(tileWidth - 0.06, 0.78, tileWidth - 0.1), mainMat);
+      cabinetBelow.position.y = 0.39;
+      cabinetBelow.castShadow = true;
+      group.add(cabinetBelow);
       break;
     }
 
@@ -958,419 +641,186 @@ export function createItemMesh(
       body.position.y = 1.0;
       body.castShadow = true;
       group.add(body);
-
-      // horizontal fridge handles
       const handle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.4, 0.04), metalMat);
       handle.position.set(0.12, 1.2, tileWidth / 2 - 0.04);
       group.add(handle);
-
-      // cyan control console glow
       const panel = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.25, 0.02), glowMat);
       panel.position.set(-0.15, 1.4, tileWidth / 2 - 0.04);
       group.add(panel);
       break;
     }
 
-    case 'fixture-toilet': {
-      // Cistern block back facing
-      const tank = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.55, 0.22), mainMat);
+    case 'fixture-cooking-range': {
+      buildAppliance(tileWidth - 0.06, 0.88, tileWidth - 0.1, false);
+      [[-0.22, -0.18], [0.22, -0.18], [-0.22, 0.18], [0.22, 0.18]].forEach(([x, z]) => {
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.015, 12), darkMat);
+        burner.position.set(x, 0.89, z);
+        group.add(burner);
+      });
+      break;
+    }
+
+    case 'fixture-dishwasher': {
+      buildAppliance(tileWidth - 0.08, 0.88, tileWidth - 0.12, false);
+      break;
+    }
+
+    case 'fixture-kitchen-island': {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.85, 0.9), mainMat);
+      body.position.set(1.4, 0.425, 0.45);
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.06, 1.0), ceramicMat);
+      top.position.set(1.4, 0.88, 0.45);
+      group.add(top);
+      break;
+    }
+
+    case 'furniture-pantry-cabinet': {
+      buildCabinet(0.9, 2.1, 0.5, 0, 1);
+      break;
+    }
+
+    // ===== BATHROOM =====
+    case 'fixture-wash-basin': {
+      buildBasin();
+      break;
+    }
+
+    case 'fixture-toilet-bowl': {
+      const tank = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.55, 0.22), ceramicMat);
       tank.position.set(0, 0.525, -0.28);
       tank.castShadow = true;
       group.add(tank);
-
-      // toilet bowl
-      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.4, 12), mainMat);
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.4, 12), ceramicMat);
       bowl.position.set(0, 0.2, 0.06);
-      bowl.scale.set(1.1, 1.0, 1.35); // oval-ish shape
+      bowl.scale.set(1.1, 1.0, 1.35);
       bowl.castShadow = true;
       group.add(bowl);
+      const seat = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 8, 16), createMaterial(new THREE.Color(0xffffff), 0.4, 0));
+      seat.rotation.x = Math.PI / 2;
+      seat.position.set(0, 0.39, 0.08);
+      group.add(seat);
+      break;
+    }
+
+    case 'fixture-shower-enclosure': {
+      const tray = new THREE.Mesh(new THREE.BoxGeometry(tileWidth - 0.06, 0.06, tileWidth - 0.06), ceramicMat);
+      tray.position.y = 0.03;
+      group.add(tray);
+      const glassPanelA = new THREE.Mesh(new THREE.BoxGeometry(tileWidth - 0.1, itemDef.height - 0.1, 0.03), glassMat);
+      glassPanelA.position.set(0, (itemDef.height - 0.1) / 2 + 0.06, tileWidth / 2 - 0.05);
+      group.add(glassPanelA);
+      const glassPanelB = glassPanelA.clone();
+      glassPanelB.rotation.y = Math.PI / 2;
+      glassPanelB.position.set(tileWidth / 2 - 0.05, (itemDef.height - 0.1) / 2 + 0.06, 0);
+      group.add(glassPanelB);
+      const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 10), metalMat);
+      showerHead.position.set(-0.3, itemDef.height - 0.3, -0.3);
+      group.add(showerHead);
       break;
     }
 
     case 'fixture-bathtub': {
-      // 2x1 grid bathtub
-      const exterior = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 0.8), mainMat);
+      const exterior = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.65, 0.8), ceramicMat);
       exterior.position.set(0.35, 0.325, 0);
       exterior.castShadow = true;
       group.add(exterior);
-
-      // hollow water plane
       const waterTub = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.01, 0.68), secMat);
       waterTub.position.set(0.35, 0.55, 0);
       group.add(waterTub);
+      const tap = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6), metalMat);
+      tap.position.set(1.1, 0.7, 0);
+      group.add(tap);
       break;
     }
 
-    case 'fixture-tv': {
-      // TV Stand table
-      const stand = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.35, 0.35), mainMat);
-      stand.position.set(0.35, 0.175, 0);
-      stand.castShadow = true;
-      group.add(stand);
-
-      // Thin screen plane
-      const screenMain = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.75, 0.04), darkMat);
-      screenMain.position.set(0.35, 0.75, 0);
-      screenMain.castShadow = true;
-      group.add(screenMain);
-
-      // Glowing blue screen decals at night
-      const activeDecal = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.71, 0.01), glowMat);
-      activeDecal.position.set(0.35, 0.75, 0.022);
-      group.add(activeDecal);
+    case 'fixture-vanity-mirror': {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.75, 0.04), secMat);
+      frame.position.set(0, itemDef.height, -0.03);
+      group.add(frame);
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.67, 0.01), glassMat);
+      glass.position.set(0, itemDef.height, -0.01);
+      group.add(glass);
       break;
     }
 
-    // === FLOOR MODE: FURNITURE ===
-    case 'furniture-sofa': {
-      // L shaped sofa (2x2 grid) centered
-      const baseMain = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.25, 0.78), mainMat);
-      baseMain.position.set(0.48, 0.125, 0);
-      baseMain.castShadow = true;
-      group.add(baseMain);
-
-      const baseL = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.25, 1.0), mainMat);
-      baseL.position.set(-0.03, 0.125, 0.89);
-      baseL.castShadow = true;
-      group.add(baseL);
-
-      // Soft backrest
-      const back1 = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.6, 0.18), secMat);
-      back1.position.set(0.48, 0.45, -0.3);
-      back1.castShadow = true;
-      group.add(back1);
-
-      const back2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.6, 1.0), secMat);
-      back2.position.set(-0.33, 0.45, 0.89);
-      back2.castShadow = true;
-      group.add(back2);
-      break;
-    }
-
-    case 'furniture-table': {
-      // dining table (2x1 grid)
-      const topGeo = new THREE.BoxGeometry(1.7, 0.05, 0.85);
-      const boardTop = new THREE.Mesh(topGeo, mainMat);
-      boardTop.position.set(0.35, 0.725, 0);
-      boardTop.castShadow = true;
-      group.add(boardTop);
-
-      // 4 simple vertical wooden cylinder legs
-      const offsetsX = [-0.42, 1.12];
-      const offsetsZ = [-0.34, 0.34];
-      offsetsX.forEach((x) => {
-        offsetsZ.forEach((z) => {
-          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 6), secMat);
-          leg.position.set(x, 0.35, z);
-          leg.castShadow = true;
-          group.add(leg);
-        });
+    // ===== OFFICE & UTILITY =====
+    case 'furniture-study-desk': {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.05, 0.85), woodMat);
+      top.position.set(0.48, 0.72, 0);
+      top.castShadow = true;
+      group.add(top);
+      const drawerBlock = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.65, 0.8), secMat);
+      drawerBlock.position.set(1.1, 0.36, 0);
+      group.add(drawerBlock);
+      [[0.06, -0.34], [0.06, 0.34]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.65, 0.05), secMat);
+        leg.position.set(x, 0.36, z);
+        group.add(leg);
       });
       break;
     }
 
-    case 'furniture-chair': {
-      // single task office chair
-      const baseGrid = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.04, 5), darkMat);
-      baseGrid.position.y = 0.06;
-      group.add(baseGrid);
-
-      const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.4, 6), metalMat);
-      spindle.position.y = 0.24;
-      group.add(spindle);
-
-      // cushion cushion
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 0.44), mainMat);
-      seat.position.y = 0.46;
-      seat.castShadow = true;
-      group.add(seat);
-
-      // high blue backrest
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, 0.06), secMat);
-      back.position.set(0, 0.75, -0.19);
-      back.castShadow = true;
-      group.add(back);
+    case 'fixture-washing-machine': {
+      buildAppliance(tileWidth - 0.08, 0.85, tileWidth - 0.1, true);
+      const door = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 16), darkMat);
+      door.rotation.x = Math.PI / 2;
+      door.position.set(0, 0.4, (tileWidth - 0.1) / 2 + 0.02);
+      group.add(door);
       break;
     }
 
-    case 'furniture-bookshelf': {
-      // Tall timber cabinet
-      const shellGeo = new THREE.BoxGeometry(0.85, 2.05, 0.38);
-      const cover = new THREE.Mesh(shellGeo, mainMat);
-      cover.position.y = 1.025;
-      cover.castShadow = true;
-      group.add(cover);
-
-      // visual layered blocks (books inside)
-      for (let h = 0.3; h < 1.9; h += 0.45) {
-        const bookG = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.22), secMat);
-        bookG.position.set(0.12, h, 0.08);
-        group.add(bookG);
-      }
+    case 'fixture-clothes-dryer': {
+      buildAppliance(tileWidth - 0.08, 0.85, tileWidth - 0.1, false);
+      const door = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 16), secMat);
+      door.rotation.x = Math.PI / 2;
+      door.position.set(0, 0.42, (tileWidth - 0.1) / 2 + 0.02);
+      group.add(door);
       break;
     }
 
-    case 'furniture-monstera': {
-      // Terracotta Pot
-      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.32, 10), secMat);
-      pot.position.y = 0.16;
-      pot.castShadow = true;
-      group.add(pot);
-
-      // Dark soil inside
-      const dirt = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 10), darkMat);
-      dirt.position.y = 0.305;
-      group.add(dirt);
-
-      // Fan green leaves (multiple angled boxes represent broad leaves)
-      const leavesAngles = [0, 1.2, 2.4, 3.6, 4.8];
-      leavesAngles.forEach((angle) => {
-        const branchGroup = new THREE.Group();
-        branchGroup.position.set(0, 0.31, 0);
-        branchGroup.rotation.y = angle;
-
-        // stem curved upward
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.6), secMat);
-        stem.position.set(0.12, 0.24, 0);
-        stem.rotation.z = -0.4;
-        branchGroup.add(stem);
-
-        // leafy broad fan
-        const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.01, 0.25), mainMat);
-        leaf.position.set(0.35, 0.48, 0);
-        leaf.rotation.z = -0.2;
-        branchGroup.add(leaf);
-
-        group.add(branchGroup);
+    case 'furniture-utility-shelf': {
+      const frameMat = metalMat;
+      const postOffsets: [number, number][] = [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]];
+      postOffsets.forEach(([x, z]) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, itemDef.height, 6), frameMat);
+        post.position.set(x, itemDef.height / 2, z);
+        group.add(post);
       });
-      break;
-    }
-
-    case 'furniture-coffee-table': {
-      // Round wooden slab
-      const plateau = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.05, 16), mainMat);
-      plateau.position.y = 0.425;
-      plateau.castShadow = true;
-      group.add(plateau);
-
-      // Slant legs
-      for (let i = 0; i < 3; i++) {
-        const legGroup = new THREE.Group();
-        legGroup.rotation.y = (i * Math.PI * 2) / 3;
-
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.42, 6), secMat);
-        leg.position.set(0.22, 0.21, 0);
-        leg.rotation.z = -0.2;
-        leg.castShadow = true;
-        legGroup.add(leg);
-
-        group.add(legGroup);
-      }
-      break;
-    }
-
-    case 'river-flow': {
-      // Dark grey canal concrete casing
-      const casingGeo = new THREE.BoxGeometry(tileWidth, 0.04, tileWidth);
-      const casing = new THREE.Mesh(casingGeo, darkMat);
-      casing.receiveShadow = true;
-      group.add(casing);
-
-      // Liquid neon flowing canal water bed
-      const waterWidth = tileWidth * 0.78;
-      const waterGeo = new THREE.BoxGeometry(waterWidth, 0.045, tileWidth);
-      const water = new THREE.Mesh(waterGeo, glowMat);
-      water.receiveShadow = true;
-      water.position.y = 0.01;
-      group.add(water);
-
-      // Light glow strips along the shorelines
-      const boundaryEdgeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, tileWidth), mainMat);
-      boundaryEdgeL.position.set(-tileWidth / 2 + 0.02, 0.015, 0);
-      const boundaryEdgeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, tileWidth), mainMat);
-      boundaryEdgeR.position.set(tileWidth / 2 - 0.02, 0.015, 0);
-      group.add(boundaryEdgeL);
-      group.add(boundaryEdgeR);
-      break;
-    }
-
-    case 'ai-data-center': {
-      // 2x2 grid. Centered around (0.48, 0, 0.48) for 2x2 dimensions.
-      // Solid dark monolith hull
-      const hullGeo = new THREE.BoxGeometry(1.82, 1.4, 1.82);
-      const hull = new THREE.Mesh(hullGeo, mainMat);
-      hull.position.set(0.48, 0.7, 0.48);
-      hull.castShadow = true;
-      hull.receiveShadow = true;
-      group.add(hull);
-
-      // Server rack blinking corridors (glowing vents built of multiple stacked lines)
-      const ventGeo = new THREE.BoxGeometry(1.84, 0.06, 0.4);
-      for (let y = 0.2; y <= 1.2; y += 0.25) {
-        const ventFaceF = new THREE.Mesh(ventGeo, glowMat);
-        ventFaceF.position.set(0.48, y, 1.15);
-        ventFaceF.scale.set(0.85, 1.0, 0.05);
-
-        const ventFaceB = new THREE.Mesh(ventGeo, glowMat);
-        ventFaceB.position.set(0.48, y, -0.19);
-        ventFaceB.scale.set(0.85, 1.0, 0.05);
-
-        group.add(ventFaceF);
-        group.add(ventFaceB);
-      }
-
-      // High-power exhaust server turbine on top
-      const turbineRingGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.15, 12);
-      const turbineRing = new THREE.Mesh(turbineRingGeo, darkMat);
-      turbineRing.position.set(0.48, 1.45, 0.48);
-      group.add(turbineRing);
-
-      // Fan node
-      const fanGeo = new THREE.SphereGeometry(0.12, 8, 8);
-      const fanHub = new THREE.Mesh(fanGeo, glowMat);
-      fanHub.position.set(0.48, 1.48, 0.48);
-      group.add(fanHub);
-      break;
-    }
-
-    case 'grand-hotel': {
-      // 2x2 grid. Fits (1.8, 5.2, 1.8). High tower luxury resort.
-      // Tier 1 Base Lobby
-      const lobGeo = new THREE.BoxGeometry(1.82, 1.8, 1.82);
-      const lobby = new THREE.Mesh(lobGeo, mainMat);
-      lobby.position.set(0.48, 0.9, 0.48);
-      lobby.castShadow = true;
-      lobby.receiveShadow = true;
-      group.add(lobby);
-
-      // Tier 2 Majestic Guest Tower
-      const tGeo = new THREE.BoxGeometry(1.3, 3.4, 1.3);
-      const tower = new THREE.Mesh(tGeo, secMat);
-      tower.position.set(0.48, 3.0, 0.48);
-      tower.castShadow = true;
-      group.add(tower);
-
-      // Glass bottom swimming pool on cantilever platform
-      const poolGeo = new THREE.BoxGeometry(0.85, 0.25, 0.65);
-      const poolFrame = new THREE.Mesh(poolGeo, darkMat);
-      poolFrame.position.set(0.48, 2.1, 1.2);
-      poolFrame.castShadow = true;
-      group.add(poolFrame);
-
-      const poolWaterGeo = new THREE.BoxGeometry(0.78, 0.2, 0.58);
-      const poolWater = new THREE.Mesh(poolWaterGeo, glowMat);
-      poolWater.position.set(0.48, 2.16, 1.2);
-      group.add(poolWater);
-
-      // Decorative spire light
-      const spireGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 6);
-      const spire = new THREE.Mesh(spireGeo, metalMat);
-      spire.position.set(0.48, 5.2, 0.48);
-      group.add(spire);
-
-      // Beacon
-      const hotelBeaconGeo = new THREE.SphereGeometry(0.1, 8, 8);
-      const hotelBeacon = new THREE.Mesh(hotelBeaconGeo, glowMat);
-      hotelBeacon.position.set(0.48, 5.8, 0.48);
-      group.add(hotelBeacon);
-      break;
-    }
-
-    case 'neon-park': {
-      // 2x2 grid, 0.1 flat tile
-      const estateGeo = new THREE.BoxGeometry(1.85, 0.06, 1.85);
-      const lawn = new THREE.Mesh(estateGeo, mainMat);
-      lawn.receiveShadow = true;
-      lawn.position.set(0.48, 0, 0.48);
-      group.add(lawn);
-
-      // Central bioluminescent concentric circle pond
-      const pondGeo = new THREE.TorusGeometry(0.48, 0.08, 6, 16);
-      const pond = new THREE.Mesh(pondGeo, glowMat);
-      pond.rotation.x = Math.PI / 2;
-      pond.position.set(0.48, 0.04, 0.48);
-      group.add(pond);
-
-      // Pathway bridge over pool
-      const parkBridgeGeo = new THREE.BoxGeometry(0.24, 0.08, 1.4);
-      const parkBridge = new THREE.Mesh(parkBridgeGeo, secMat);
-      parkBridge.position.set(0.48, 0.05, 0.48);
-      group.add(parkBridge);
-
-      // Giant glowing arches
-      const archGeo = new THREE.TorusGeometry(0.68, 0.03, 6, 16, Math.PI);
-      const arch1 = new THREE.Mesh(archGeo, glowMat);
-      arch1.position.set(0.48, 0.01, 0.48);
-      // Span across diagonals
-      arch1.rotation.y = Math.PI / 4;
-      group.add(arch1);
-      break;
-    }
-
-    case 'rainbow-tree': {
-      // 1x1 tree with glowing visual leaves
-      const trunkGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.8, 8);
-      const trunk = new THREE.Mesh(trunkGeo, darkMat);
-      trunk.position.y = 0.4;
-      trunk.castShadow = true;
-      group.add(trunk);
-
-      // Concentric glowing digital light canopies
-      const bottomCanopyGeo = new THREE.BoxGeometry(0.65, 0.18, 0.65);
-      const bCanopy = new THREE.Mesh(bottomCanopyGeo, glowMat);
-      bCanopy.position.y = 0.9;
-      bCanopy.castShadow = true;
-      group.add(bCanopy);
-
-      const topCanopyGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
-      const tCanopy = new THREE.Mesh(topCanopyGeo, glowMat);
-      tCanopy.position.y = 1.35;
-      tCanopy.castShadow = true;
-      group.add(tCanopy);
-      break;
-    }
-
-    case 'furniture-bed': {
-      // Bed wood base 2x2 grid
-      const woodenBase = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.25, 1.84), mainMat);
-      woodenBase.position.set(0.48, 0.125, 0.48);
-      woodenBase.castShadow = true;
-      woodenBase.receiveShadow = true;
-      group.add(woodenBase);
-
-      // Mattress
-      const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.44, 1.72), createMaterial(new THREE.Color(0xf5f5f5), 0.8, 0));
-      mattress.position.set(0.48, 0.44, 0.48);
-      mattress.castShadow = true;
-      group.add(mattress);
-
-      // Bed velvet throw/duvet
-      const duvet = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.2, 1.1), secMat);
-      duvet.position.set(0.48, 0.55, 0.78);
-      duvet.castShadow = true;
-      group.add(duvet);
-
-      // Dual white pillows
-      for (const off of [0.15, 0.81]) {
-        const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.08, 0.32), createMaterial(new THREE.Color(0xffffff), 0.9, 0));
-        pillow.position.set(off, 0.68, 0.1);
-        group.add(pillow);
+      for (let h = 0.2; h < itemDef.height; h += (itemDef.height - 0.2) / 3) {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.03, 0.85), mainMat);
+        shelf.position.y = h;
+        shelf.castShadow = true;
+        group.add(shelf);
       }
       break;
     }
 
     default: {
-      // Fallback fallback cube
-      const geometry = new THREE.BoxGeometry(tileWidth, itemDef.height, tileWidth);
-      const mesh = new THREE.Mesh(geometry, mainMat);
-      mesh.position.y = itemDef.height / 2;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
+      // Improved generic fallback: inset top + base trim so untouched items
+      // don't read as a flat, featureless cube.
+      const bodyH = itemDef.height * 0.86;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(tileWidth * 0.92, bodyH, tileWidth * 0.92), mainMat);
+      body.position.y = bodyH / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      const base = new THREE.Mesh(new THREE.BoxGeometry(tileWidth * 0.98, itemDef.height * 0.06, tileWidth * 0.98), darkMat);
+      base.position.y = itemDef.height * 0.03;
+      group.add(base);
+
+      const capGeo = new THREE.BoxGeometry(tileWidth * 0.8, itemDef.height * 0.08, tileWidth * 0.8);
+      const cap = new THREE.Mesh(capGeo, secMat);
+      cap.position.y = bodyH + itemDef.height * 0.04;
+      cap.castShadow = true;
+      group.add(cap);
     }
   }
 
-  // Apply rotation and coordinate translation based on placed entity config
+  // Apply wall-style edge alignment so doors/windows/partitions sit flush
   if (itemDef.category === 'Walls') {
     const wallThickness = 0.14;
     const wallEdgeOffset = -(tileWidth / 2 - wallThickness / 2);
@@ -1379,10 +829,8 @@ export function createItemMesh(
     });
   }
 
-  // Apply rotation and coordinate translation based on placed entity config
   group.rotation.y = entity.rotation;
 
-  // Let's configure shadow properties recursively for the group
   group.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.castShadow = true;
@@ -1391,24 +839,4 @@ export function createItemMesh(
   });
 
   return group;
-}
-
-function sirensRight(isNight: boolean, itemDef: ItemDefinition): THREE.Mesh {
-  let isEmissive = false;
-  let emissiveIntensity = 0.0;
-  let emissiveColor = new THREE.Color(0x0a1c1e);
-  if (isNight) {
-    isEmissive = true;
-    emissiveIntensity = 2.5;
-    emissiveColor = new THREE.Color(0x0d47a1);
-  }
-  const glowMat = new THREE.MeshStandardMaterial({
-    color: isNight ? new THREE.Color(0x2ef37f) : new THREE.Color(0xff1221),
-    emissive: isEmissive ? emissiveColor : new THREE.Color(0x000000),
-    emissiveIntensity: emissiveIntensity,
-    roughness: 0.2,
-    metalness: 0.1,
-  });
-  const sirenRight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), glowMat);
-  return sirenRight;
 }
